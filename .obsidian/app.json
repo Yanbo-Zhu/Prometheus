@@ -1,0 +1,16 @@
+{
+  "showLineNumber": true,
+  "spellcheck": true,
+  "defaultViewMode": "source",
+  "promptDelete": false,
+  "livePreview": true,
+  "readableLineLength": false,
+  "showFrontmatter": true,
+  "strictLineBreaks": false,
+  "spellcheckLanguages": null,
+  "useTab": false,
+  "newLinkFormat": "relative",
+  "attachmentFolderPath": "./image",
+  "useMarkdownLinks": true,
+  "alwaysUpdateLinks": true
+}
