@@ -13,13 +13,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "07_数据可视化/07_04_模板化Dashboard.md",
+                "file": "08_集群和高可用/08_06_AlertManager高可用.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "1f4467ae52d9c434",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "10_监控kubernetes/10_03_Kubernetes下的服务发现.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -85,7 +98,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "07_数据可视化/07_04_模板化Dashboard.md",
+                "file": "10_监控kubernetes/10_03_Kubernetes下的服务发现.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +115,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "07_数据可视化/07_04_模板化Dashboard.md",
+                "file": "10_监控kubernetes/10_03_Kubernetes下的服务发现.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -137,7 +150,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "07_数据可视化/07_04_模板化Dashboard.md"
+                "file": "10_监控kubernetes/10_03_Kubernetes下的服务发现.md"
               }
             }
           }
@@ -160,10 +173,28 @@
       "workspaces:管理工作区布局": false
     }
   },
-  "active": "9821b2ef77504a57",
+  "active": "1f4467ae52d9c434",
   "lastOpenFiles": [
-    "07_数据可视化/07_03_Grafana面板.md",
+    "10_监控kubernetes/10_02_部署Prometheus.md",
+    "10_监控kubernetes/10_03_Kubernetes下的服务发现.md",
+    "10_监控kubernetes/10_01_初识Kubernetes.md",
+    "09_Prometheus服务发现/09_04_服务发现与Relabel.md",
+    "10_监控kubernetes",
+    "09_Prometheus服务发现/09_03_基于Consul的服务发现.md",
+    "09_Prometheus服务发现/09_02_基于文件的服务发现.md",
+    "09_Prometheus服务发现/09_01_Prometheus与服务发现.md",
+    "08_集群和高可用/08_06_AlertManager高可用.md",
+    "09_Prometheus服务发现",
+    "08_集群和高可用/08_05_Prometheus高可用.md",
+    "05_Prometheus警告处理/05_01_Prometheus告警简介.md",
+    "08_集群和高可用/08_04_联邦集群.md",
+    "08_集群和高可用/08_03_远程存储.md",
+    "01_总览/01_01_学习资料.md",
+    "08_集群和高可用/08_02_本地存储.md",
+    "08_集群和高可用/08_01_总览.md",
+    "08_集群和高可用",
     "07_数据可视化/07_04_模板化Dashboard.md",
+    "07_数据可视化/07_03_Grafana面板.md",
     "07_数据可视化/07_04_分布统计_Heatmap面板.md",
     "04_基本操作/04_01_任务和实例.md",
     "07_数据可视化/07_02_Grafana的基本概念.md",
@@ -172,33 +203,15 @@
     "07_数据可视化",
     "03_安装/03_02_NodeExporter的安装.md",
     "03_安装/03_01_Prometheus的安装.md",
-    "01_总览/01_01_学习资料.md",
     "06_Exporter/06_04_网络探测_BlockboxExporter.md",
     "06_Exporter/06_02_常用Exporter.md",
-    "05_Prometheus警告处理/05_03_部署AlertManager.md",
-    "06_Exporter/06_01_Exporter是什么.md",
-    "06_Exporter/06_03_监控MySQL运行状态：MySQLD Exporter.md",
     "06_Exporter",
-    "05_Prometheus警告处理/05_09_使用Recoding Rules优化性能.md",
-    "05_Prometheus警告处理/05_08_屏蔽告警通知_alertmanager.yml中的inhibit_rules.md",
-    "05_Prometheus警告处理/05_07_告警模板详解_alertmanager.yml中的templates.md",
-    "05_Prometheus警告处理/05_06_使用Receiver接收告警信息_alertmanager.yml中的receviers.md",
-    "05_Prometheus警告处理/05_05_基于标签的告警处理路由_alertmanager.yml中的route.md",
-    "05_Prometheus警告处理/05_02_自定义Prometheus告警规则.md",
-    "05_Prometheus警告处理/05_01_Prometheus告警简介.md",
-    "05_Prometheus警告处理/05_04_Alertmanager配置概述.md",
     "05_Prometheus警告处理",
-    "02_基本/02_02_Prometheus核心组件.md",
-    "98_PromQL/98_08_最佳实_4个黄金指标和USE方法.md",
-    "98_PromQL/98_01_基础介绍.md",
     "04_基本操作",
     "99_Grafana",
     "98_PromQL",
     "03_安装",
-    "02_基本",
-    "01_总览",
     "99_terraform-docs/image/Pasted image 20240302164412.png",
-    "99_terraform-docs/image",
     "07_02_AWS实践/image/Pasted image 20231203142221.png",
     "07_02_AWS实践/image/Pasted image 20231203141947.png",
     "07_02_AWS实践/image/Pasted image 20231203141755.png",

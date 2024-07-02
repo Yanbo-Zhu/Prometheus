@@ -18,7 +18,20 @@ Alertmanager作为一个独立的组件，负责接收并处理来自Prometheus 
 - 通知： Prometheus内置了对邮件，Slack等多种通知方式的支持.   
 - 定制化的通知: 同时还支持与Webhook的集成，以支持更多定制化的场景。例如，目前Alertmanager还不支持钉钉，那用户完全可以通过Webhook与钉钉机器人进行集成，从而通过钉钉接收告警信息。同时AlertManager还提供了静默和告警抑制机制来对告警通知行为进行优化。
 
-# 1 Alertmanager特性
+# 1 警告的流程
+
+当Alertmanager接收到来自Prometheus的告警消息后，会按照以下流程对告警进行处理：
+
+![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVSjRCOz_gMbNhBDIvI%252F-LPufOwoNbDOTMUcTl15%252Fam-notifi-pipeline.png%3Fgeneration%3D1546687209270858%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=688ae3e5&sv=1)
+
+通知流水线
+
+1. 在第一个阶段Silence中，Alertmanager会判断当前通知是否匹配到任何的静默规则，如果没有则进入下一个阶段，否则则中断流水线不发送通知。
+2. 在第二个阶段Wait中，Alertmanager会根据当前Alertmanager在集群中所在的顺序(index)等待index * 5s的时间。
+3. 当前Alertmanager等待阶段结束后，Dedup阶段则会判断当前Alertmanager数据库中该通知是否已经发送，如果已经发送则中断流水线，不发送告警，否则则进入下一阶段Send对外发送告警通知。
+4. 告警发送完成后该Alertmanager进入最后一个阶段Gossip，Gossip会通知其他Alertmanager实例当前告警已经发送。其他实例接收到Gossip消息后，则会在自己的数据库中保存该通知已发送的记录。
+
+# 2 Alertmanager特性
 
 Alertmanager除了提供基本的告警通知能力以外，还主要提供了如：分组、抑制以及静默等告警特性：
 
@@ -27,7 +40,7 @@ Alertmanager除了提供基本的告警通知能力以外，还主要提供了�
 Alertmanager特性
 
 
-## 1.1 分组
+## 2.1 分组
 
 分组机制可以将详细的告警信息合并成一个通知。在某些情况下，比如由于系统宕机导致大量的告警被同时触发，在这种情况下分组机制可以将这些被触发的告警合并为一个告警通知，避免一次性接受大量的告警通知，而无法对问题进行快速定位。
 
@@ -38,13 +51,13 @@ Alertmanager特性
 告警分组，告警时间，以及告警的接受方式可以通过Alertmanager的配置文件进行配置。
 
 
-# 2 抑制
+# 3 抑制
 
 抑制是指当某一告警发出后，可以停止重复发送由此告警引发的其它告警的机制。
 例如，当集群不可访问时触发了一次告警，通过配置Alertmanager可以忽略与该集群有关的其它所有告警。这样可以避免接收到大量与实际问题无关的告警通知。
 抑制机制同样通过Alertmanager的配置文件进行设置。
 
-# 3 静默
+# 4 静默
 
 静默提供了一个简单的机制可以快速根据标签对告警进行静默处理。如果接收到的告警符合静默的配置，Alertmanager则不会发送告警通知。
 静默设置需要在Alertmanager的Werb页面上进行设置。
