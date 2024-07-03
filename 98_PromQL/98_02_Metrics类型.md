@@ -14,6 +14,46 @@ node_cpu{cpu="cpu0",mode="idle"} 362812.7890625
 ```
 
 
+四种数据类型
+
+- gauge 当前值 
+    - node_memory_MemFree_bytes
+- counter 计数器是代表一个累积指标单调递增计数器，其价值只能在重新启动增加或归零。例如，您可以使用计数器来表示已服务请求，已完成任务或错误的数量。
+    - http_request_total
+- histogram 直方图样本观测（通常之类的东西请求持续时间或响应大小）和计数它们配置的桶中。它还提供所有观察值的总和
+```
+# http所有接口 总的95分位值
+# sum/count 可以算平均值
+prometheus_http_request_duration_seconds_sum/ prometheus_http_request_duration_seconds_count
+
+# histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[5m])) by (le,handler))
+
+histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket[1m])) by (le))
+
+# range_query接口的95分位值
+histogram_quantile(0.95, sum(rate(prometheus_http_request_duration_seconds_bucket{handler="/api/v1/query_range"}[5m])) by (le))
+
+
+```
+
+- summary  摘要会采样观察值（通常是请求持续时间和响应大小之类的东西）。尽管它还提供了观测值的总数和所有观测值的总和，但它可以计算滑动时间窗口内的可配置分位数。
+
+```
+# gc耗时
+
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 0.000135743
+go_gc_duration_seconds{quantile="0.25"} 0.000872805
+go_gc_duration_seconds{quantile="0.5"} 0.000965516
+go_gc_duration_seconds{quantile="0.75"} 0.001055636
+go_gc_duration_seconds{quantile="1"} 0.006464756
+
+# summary 平均值
+go_gc_duration_seconds_sum /go_gc_duration_seconds_count
+
+```
+
 # 1 Counter：只增不减的计数器
 
 Counter类型的指标其工作方式和计数器一样，只增不减（除非系统发生重置）。常见的监控指标，如http_requests_total，node_cpu都是Counter类型的监控指标。 一般在定义Counter类型指标的名称时推荐使用_total作为后缀。
@@ -70,8 +110,8 @@ Summary 类型的 metric
 例如，指标prometheus_tsdb_wal_fsync_duration_seconds的指标类型为Summary。 它记录了Prometheus Server中wal_fsync处理的处理时间，通过访问Prometheus Server的/metrics地址，可以获取到以下监控样本数据：
 
 ```
-# HELP prometheus_tsdb_wal_fsync_duration_seconds Duration of WAL fsync.
-# TYPE prometheus_tsdb_wal_fsync_duration_seconds summary
+# 1 HELP prometheus_tsdb_wal_fsync_duration_seconds Duration of WAL fsync.
+# 2 TYPE prometheus_tsdb_wal_fsync_duration_seconds summary
 prometheus_tsdb_wal_fsync_duration_seconds{quantile="0.5"} 0.012352463
 prometheus_tsdb_wal_fsync_duration_seconds{quantile="0.9"} 0.014458005
 prometheus_tsdb_wal_fsync_duration_seconds{quantile="0.99"} 0.017316173
@@ -87,8 +127,8 @@ Histogram类型的metric
 在Prometheus Server自身返回的样本数据中，我们还能找到类型为Histogram的监控指标prometheus_tsdb_compaction_chunk_range_bucket。
 
 ```
-# HELP prometheus_tsdb_compaction_chunk_range Final time range of chunks on their first compaction
-# TYPE prometheus_tsdb_compaction_chunk_range histogram
+# 3 HELP prometheus_tsdb_compaction_chunk_range Final time range of chunks on their first compaction
+# 4 TYPE prometheus_tsdb_compaction_chunk_range histogram
 prometheus_tsdb_compaction_chunk_range_bucket{le="100"} 0
 prometheus_tsdb_compaction_chunk_range_bucket{le="400"} 0
 prometheus_tsdb_compaction_chunk_range_bucket{le="1600"} 0

@@ -1,4 +1,5 @@
 https://github.com/prometheus/blackbox_exporter
+https://www.yuque.com/ssebank/eoudn8/bctqk1
 
 # 1 黑盒监控和白盒监控
 
@@ -109,8 +110,18 @@ probe_success 1
 从返回的样本中，用户可以获取站点的DNS解析耗时、站点响应时间、HTTP响应状态码等等和站点访问质量相关的监控指标，从而帮助管理员主动的发现故障和问题。
 
 
+# 3 在机器上部署 blackbox_exporter
 
-# 3 与Prometheus集成
+- 项目地址 https://github.com/prometheus/blackbox_exporter
+
+
+# 4 访问页面
+
+`http://ip:9115/`
+
+![](image/image.webp)
+
+# 5 与Prometheus集成
 
 接下来，只需要在Prometheus下配置对Blockbox Exporter实例的采集任务即可。最直观的配置方式：
 
@@ -198,6 +209,8 @@ scrape_configs:
     static_configs:
       - targets: ['127.0.0.1:9115']
 ```
+会发现如此配置之后 实例数据只有blackbox_exporter的地址 而没有target的地址
+
 
 这里针对每一个探针服务（如http_2xx）定义一个采集任务，并且直接将任务的采集目标定义为我们需要探测的站点。在采集样本数据之前通过relabel_configs对采集任务进行动态设置。
 - 第1步，根据Target实例的地址，写入`__param_target`标签中。`__param_<name>`形式的标签表示，在采集任务时会在请求目标地址中添加`<name>`参数，等同于params的设置；
@@ -215,7 +228,7 @@ Blackbox Target实例
 
 
 
-# 4 HTTP探针
+# 6 HTTP探针
 
 HTTP探针是进行黑盒监控时最常用的探针之一，通过HTTP探针能够网站或者HTTP服务建立有效的监控，包括其本身的可用性，以及用户体验相关的如响应时间等等。除了能够在服务出现异常的时候及时报警，还能帮助系统管理员分析和优化网站体验。
 
@@ -230,7 +243,7 @@ modules:
 
 通过prober配置项指定探针类型。配置项http用于自定义探针的探测方式，这里有没对http配置项添加任何配置，表示完全使用HTTP探针的默认配置，该探针将使用HTTP GET的方式对目标服务进行探测，并且验证返回状态码是否为2XX，是则表示验证成功，否则失败。
 
-## 4.1 自定义HTTP请求
+## 6.1 自定义HTTP请求
 
 HTTP服务通常会以不同的形式对外展现，有些可能就是一些简单的网页，而有些则可能是一些基于REST的API服务。 对于不同类型的HTTP的探测需要管理员能够对HTTP探针的行为进行更多的自定义设置，包括：HTTP请求方法、HTTP头信息、请求参数等。对于某些启用了安全认证的服务还需要能够对HTTP探测设置相应的Auth支持。对于HTTPS类型的服务还需要能够对证书进行自定义设置。
 
@@ -277,7 +290,7 @@ http_basic_auth_example:
 
 
 
-## 4.2 自定义探针行为
+## 6.2 自定义探针行为
 
 在默认情况下HTTP探针只会对HTTP返回状态码进行校验，如果状态码为2XX（200 <= StatusCode < 300）则表示探测成功，并且探针返回的指标probe_success值为1。
 
