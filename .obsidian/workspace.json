@@ -37,7 +37,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "06_Exporter/06_06_proemetheus多实例采集.md",
+                "file": "01_总览/01_01_学习资料.md",
                 "mode": "source",
                 "source": false
               }
@@ -110,7 +110,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "06_Exporter/06_06_proemetheus多实例采集.md",
+                "file": "01_总览/01_01_学习资料.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -127,7 +127,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "06_Exporter/06_06_proemetheus多实例采集.md",
+                "file": "01_总览/01_01_学习资料.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -162,7 +162,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "06_Exporter/06_06_proemetheus多实例采集.md"
+                "file": "01_总览/01_01_学习资料.md"
               }
             }
           }
@@ -187,11 +187,11 @@
   },
   "active": "cf1f526528de6d81",
   "lastOpenFiles": [
+    "06_Exporter/06_06_proemetheus多实例采集.md",
     "06_Exporter/06_07_采集指标分类.md",
     "06_Exporter/image/1545252574-5ff7d0d0053c1.webp",
     "06_Exporter/image/1772679997-5ff7d097ce3c8.webp",
     "06_Exporter/image/1011751003-5ff7d04aca40d.webp",
-    "06_Exporter/06_06_proemetheus多实例采集.md",
     "06_Exporter/image/Pasted image 20240703224216.png",
     "06_Exporter/06_04_网络探测_BlockboxExporter.md",
     "04_基本操作/04_01_任务和实例_job和instance.md",
