@@ -420,7 +420,60 @@ probe_ip_protocol 6
 
 除了支持对HTTP协议进行网络探测以外，Blackbox还支持对TCP、DNS、ICMP等其他网络协议，感兴趣的读者可以从Blackbox的Github项目中获取更多使用信息
 
+# 7 例子 监测kubernetes的集群node的ping的情况
 
+在blackbox的配置文件中配置icmp模块：
+```
+ icmp:
+    prober: icmp
+```
+
+在prometheus.yml中配置服务发现，将__address__改写为blackbox_exporter的地址，并带上相关参数：
+```
+- job_name: 'kubernetes-nodes-ping'
+    kubernetes_sd_configs:
+    - role: node
+      api_server: https://192.168.88.10
+      tls_config:
+        ca_file:   /opt/app/k8s/admin/cert/ca/ca.pem
+        cert_file: /opt/app/k8s/admin/cert/apiserver-client/cert.pem
+        key_file:  /opt/app/k8s/admin/cert/apiserver-client/key.pem
+    bearer_token_file: /opt/app/k8s/apiserver/cert/token.csv
+    scheme: http
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: (.+):(.+)
+      replacement: ${1}
+      target_label: __param_target
+    - target_label: __address__
+      replacement: 192.168.88.10:9115
+    - action: labelmap
+      regex: __meta_kubernetes_node_label_(.+)
+```
+
+
+重新加载配置后，就可以在prometheus的页面中可以看到新增的target，而它们的地址是blackbox的地址。
+
+可以在prometheus中搜索指标probe_success：
+```
+# http://10.10.199.154:9090/graph?g0.range_input=1h&g0.expr=probe_success&g0.tab=0
+```
+
+可以编写下面的告警规则，如果持续2分钟ping不通，触发告警
+```
+- name: node_icmp_avaliable
+  rules:
+  - alert: NODE_ICMP_UNREACHABLE
+    expr: probe_success{job="kubernetes-nodes-ping"} == 0
+    for: 2m
+    labels:
+      level: 1
+    annotations:
+      summary: node is {{ $labels.instance }}
+```
 
 # 7 例子 监测kubernetes的集群node的ping的情况
 

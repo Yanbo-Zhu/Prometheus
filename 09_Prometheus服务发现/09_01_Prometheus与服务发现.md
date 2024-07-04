@@ -29,20 +29,31 @@ Push系统 vs Pull系统
 
 ```
 <scrape_config>
+
 <tls_config>
+
 <azure_sd_config>
+
 <Consul_sd_config>
+
 <dns_sd_config>
+
 <ec2_sd_config>
+
 <openstack_sd_config>
+
 <file_sd_config>
+
 <gce_sd_config>
+
 <kubernetes_sd_config>
+
 <marathon_sd_config>
+
 <nerve_sd_config>
+
 <serverset_sd_config>
+
 <triton_sd_config>
 ```
-
-
 
