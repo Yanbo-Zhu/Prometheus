@@ -27,6 +27,9 @@ groups:
 - labels：自定义标签，允许用户指定要附加到告警上的一组附加标签。
 - annotations：用于指定一组附加信息，比如用于描述告警详细信息的文字等，annotations的内容在告警产生时会一同作为参数发送到Alertmanager。
 
+
+![](https://img2018.cnblogs.com/blog/1354564/201904/1354564-20190425182552717-1504291074.png)
+
 ---
 
 
@@ -176,10 +179,42 @@ Prometheus首次检测到满足触发条件后，hostCpuUsageAlert显示由一�
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPS9OCY3C6XBe9KTNE4%252F-LPS9QT-tR3hyCwulwPu%252Fnode_cpu_alert_firing.png%3Fgeneration%3D1540235054341761%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=ddabb25f&sv=1)
 
 
-
-# 5 接下来
-
-在这一小节中介绍了如何配置和使用Prometheus提供的告警能力，并且尝试实现了对主机CPU以及内存的告警规则设置。目前为止，我们只能通过Prometheus UI查看当前告警的活动状态。接下来，接下来我们将尝试利用Prometheus体系中的另一个组件Alertmanager对这些触发的告警进行处理，实现告警通知。
+# 5 警告级别
 
 
+在rules.yml文件中，severity直接写在labels中，有三种等级，分别为warning、critical和emergency。严重等级依次递增。
+在编写抑制规则之后，prometheus将触发的告警发送给alertmanager，其会自动从labels中读出这条告警相应的告警等级信息，根据设置抑制低等级的告警。
 
+```
+groups:
+- name: PromRules
+  rules:
+  - alert: Node-Load
+    annotations: {description: 'descTest',
+      summary: 'summaryTest'}
+    expr: node_load1 > 0.01
+    for: 30s
+    labels: {resType: 'Node',severity: 'warning'}
+  - alert: Node-Load
+    annotations: {description: 'descTest',
+      summary: 'summaryTest'}
+    expr: node_load1 > 0.02
+    for: 30s
+    labels: {resType: 'Node',severity: 'critical'}
+```
+
+
+
+# 6 AlertManager监控语句汇总
+
+随着对容器监控精细化的要求越来越高，对容器的监控已不再满足于Grafana看板这类的视觉图表；
+需要从pod, container，服务部署的颗粒度进行监控，并建立起对应的告警规则；
+pod的不停crash，无限重启，被驱逐Evicted，状态非running；
+服务的Deployment部署不完全，desired和current的数量不一致；
+
+
+该网站内的众多AlertManger监控语句可以直接套用，监控指标与Prometheus采集的监控指标一致；
+
+[Awesome-prometheus-alerts for kubernetes](https://awesome-prometheus-alerts.grep.to/rules#kubernetes)
+
+https://samber.github.io/awesome-prometheus-alerts/rules#kubernetes

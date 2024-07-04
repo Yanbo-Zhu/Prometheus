@@ -197,7 +197,7 @@ public class YourClass {
 Counter与Gauge的使用方法一致，唯一的区别在于Counter实例只包含一个inc()方法，用于计数器+1。
 
 
-### 1.5.1 复杂类型Summary和Histogram
+## 1.5.1 复杂类型Summary和Histogram
 
 Summary和Histogram用于统计和分析样本的分布情况。如下所示，通过Summary可以将HTTP请求的字节数以及请求处理时间作为统计样本，直接统计其样本的分布情况。
 

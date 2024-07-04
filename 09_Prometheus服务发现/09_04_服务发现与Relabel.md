@@ -21,6 +21,8 @@
 
 > ==就是复写 某个label 的vlue. 从 target 上采集到的 信息, 某个数据上有label, 复写他的值 ==
 
+> 它的作用是 Prometheus 抓取 metrics 之前，就将对象相关的 labels 重写。下面是它几个重要的 label：
+
 在Prometheus所有的Target实例中，都包含一些默认的Metadata标签信息。可以通过Prometheus UI的Targets页面中查看这些实例的Metadata标签的内容：
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPui3iWsSYuoIaPTZtS%252F-LPui6XS6SgDzCvoGrMw%252Fprometheus_file_target_metadata.png%3Fgeneration%3D1540730946055793%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=dd1b4db4&sv=1)
@@ -28,10 +30,11 @@
 实例的Metadata信息
 
 默认情况下，当Prometheus加载Target实例完成后，这些Target时候都会包含一些默认的标签：
-- `__address__`：当前Target实例的访问地址`<host>:<port>`
+- `__address__`：当前Target实例的访问地址`<host>:<port>`, 默认为 host:port，也是之后抓取之后 instance 的值；
 - `__scheme__`：采集目标服务访问地址的HTTP Scheme，HTTP或者HTTPS
-- `__metrics_path__`：采集目标服务访问地址的访问路径
-- `__param_<name>`：采集任务目标服务的中包含的请求参数
+- `__metrics_path__`：采集目标服务访问地址的访问路径, 就是 metrics path，默认为 /metrics；
+- `__param_<name>`：采集任务目标服务的中包含的请求参数, 用来作为 URL parameter，比如 http://…/metrics?name=value；
+- `__meta_`：这个开头的配置都是 SD 相关的配置；
 
 
 上面这些标签将会告诉Prometheus如何从该Target实例中获取监控数据。除了这些默认的标签以外，我们还可以为Target添加自定义的标签，例如，在“基于文件的服务发现”小节中的示例中，我们通过JSON配置文件，为Target实例添加了自定义标签env，如下所示该标签最终也会保存到从该实例采集的样本数据中：

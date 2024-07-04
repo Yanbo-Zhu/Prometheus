@@ -16,6 +16,8 @@ tar -xzf prometheus-${VERSION}.darwin-amd64.tar.gz
 cd prometheus-${VERSION}.darwin-amd64
 ```
 
+然后移动到/opt/prometheus文件夹里面，没有该文件夹则创建
+
 解压后当前目录会包含默认的Prometheus配置文件promethes.yml:
 ```
 # my global config
@@ -74,6 +76,22 @@ level=info ts=2018-10-23T14:55:14.509537Z caller=main.go:523 msg="Server is read
 ```
 
 
+## 1.1 prometheus 启动
+
+在/opt/prometheus/prometheus-2.19.3.linux-amd64的目录下输入:
+
+```bash
+nohup ./prometheus   >/dev/null   2>&1 &
+```
+
+启动成功之后，在浏览器上输入 ip+9090可以查看相关信息。
+
+![在这里插入图片描述](https://img2020.cnblogs.com/blog/1138196/202104/1138196-20210405121425628-625987805.png)  
+![在这里插入图片描述](https://img2020.cnblogs.com/blog/1138196/202104/1138196-20210405121425898-2021261055.png)
+
+
+
+
 
 # 2 使用容器安装
 
@@ -87,7 +105,35 @@ docker run -p 9090:9090 -v /etc/prometheus/prometheus.yml:/etc/prometheus/promet
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPWdZfpgg-IxWhxja2D%252F-LPMFp6m_uMCLYKqaoBZ%252Fprometheus-ui-graph.png%3Fgeneration%3D1540310329044095%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=e3288e9c&sv=1)
 
-Prometheus UI
+
+
+## 2.1 直接本机Docker启动
+
+直接本机Docker启动，然后访问本机后台：http://localhost:9090/
+`docker run --name prometheus -d -p 127.0.0.1:9090:9090 prom/prometheus`
+
+
+
+可以docker inspect看到它的信息：
+配置文件：--config.file=/etc/prometheus/prometheus.yml
+存储路径：--storage.tsdb.path=/prometheus
+
+数据模型：
+所有数据都是时序数据，time series。
+时序数据可以有name和label来分类过滤，比如：
+
+
+```
+<metric name>{<label name>=<label value>, ...}
+api_http_requests_total{method="POST", handler="/messages"}
+```
+
+
+
+
+
+
+
 
 
 

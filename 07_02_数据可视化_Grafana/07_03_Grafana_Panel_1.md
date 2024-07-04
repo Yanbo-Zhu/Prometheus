@@ -32,6 +32,8 @@ Grafana中所有的面板均以插件的形式进行使用，当前内置了5种
 当选中数据源时，Panel会根据当前数据源类型加载不同的Query Editor界面。这里我们主要介绍Prometheus Query Editor，如下所示，当选中的数据源类型为Prometheus时，会显示如下界面：
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPuo-z7M1wVtmm-6lNl%252F-LPuo1vxA5nMrEawdH86%252Fgraph_prometheus_query_editor.png%3Fgeneration%3D1540732504063330%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=447fc563&sv=1)
 
+
+
 2  PromQL 查询语句 
 Grafana提供了对PromQL的完整支持，在Query Editor中，可以添加任意个Query，并且使用PromQL表达式从Prometheus中查询相应的样本数据。
 
@@ -69,20 +71,75 @@ avg (irate(node_cpu{mode!='idle'}[2m])) without (cpu)
 在面板中，可以查看当前Prometheus返回的样本数据，用户也可以提供Mock数据渲染图像。
 
 
+# 2 除了Metric之外，还有几个选项，
+
+![](image/1354564-20190709085306644-1652147647.png)
 
 
-# 2 变化趋势：Graph面板
+
+除了Metric之外，还有几个选项，含义分别是：
+- General：一般是将其他项都配置好后再回头设置General，而在General配置标签中一般只会用到“Title”，就是图表的标题，如这里的Node数量
+
+```
+Title：图表标题；
+Description：图表描述；
+Span：图表间隔，无需设定，在前端可手动调整图表大小；
+Height：图表高度，无需设定，在前端可手动调整图表高度；
+Transparent：背景是否透明，默认情况下不勾选，如果觉得不需要深灰色背景，可以勾选此项；
+Templating和Drilldown / detail link用处不大，忽略即可。
+```
+
+- Metric：比较重要，配指标表达式和指标线的地方，上边已经举例
+- Axes：配置数据轴的地方，如偏移缩放，格式转换
+- Legend：图例，是否限制以及显示的方式
+- Display: 展示相关的配置，如线条宽度，排序方式、空值处理
+- Alert: 报警配置，grafana算是少有的展示图表支持报警的，但他的报警只支持到单图表，无法嵌套模板，有点鸡肋。如左上角有筛选node的下拉框，图表又传入了变量时，如果配置报警，是配置失败的。报错为：“Template variables are not supported in alert queries”
+
+
+- TimeRange: 配置单图表的展示时间，如24h内的数据
+```
+Override relative time:  覆盖右上角选择的时间，设置要显示的时间范围，这里我设置24h（单位自己可选）。 
+Add time shift:  这里是偏移量设置，比如填写2h表示不显示最近2h的数据。 
+Hide time ocerride info:  上边相对时间设置之后在graph中会显示本图表的时间信息，在此处选择后可以把显示的信息隐藏掉
+```
+
+
+# 3 变量设置 
+
+
+对于一些复杂场景，可能需要传入变量，如有多台机器，每台机器都要展示其cpu内存等指标。而机器列表又是动态的，这个时候就可以使用变量，示例：
+
+![](https://img2018.cnblogs.com/blog/1354564/201907/1354564-20190709085428192-946434278.png)
+
+首先在该面板的setting中选择variables，注意是该面板的设置，不是全局设置
+
+ ![](https://img2018.cnblogs.com/blog/1354564/201907/1354564-20190709085442805-1470967698.png)
+
+填写名称，下拉框选项的数据获取表达式，刷新周期，是否有ALL选项等，然后保存
+
+接下来在具体的图表中使用该变量
+
+ ![](https://img2018.cnblogs.com/blog/1354564/201907/1354564-20190709085506558-1917537514.png)
+
+在metric中，将变量$Node写在表达式中做匹配即可。
+
+grafana的变量支持高级匹配，如$Node.*代表以Node开头的字符，利用变量的方式，可以实现多级筛选，满足更复杂的需求，如pod资源的查看
+
+![](https://img2018.cnblogs.com/blog/1354564/201907/1354564-20190709085533391-1118196572.png)
+
+
+# 4 变化趋势：Graph面板
 
 
 Graph面板是最常用的一种可视化面板，其通过折线图或者柱状图的形式显示监控样本随时间而变化的趋势。Graph面板天生适用于Prometheus中Gauge和Counter类型监控指标的监控数据可视化。例如，当需要查看主机CPU、内存使用率的随时间变化的情况时，可以使用Graph面板。同时，Graph还可以非常方便的支持多个数据之间的对比。
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPuo-z7M1wVtmm-6lNl%252F-LPuo2-oeb4Ut2mdZ66Z%252Fgrafana_graph_panel.png%3Fgeneration%3D1540732501737332%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=34afd7d4&sv=1)
 
-## 2.1 Graph面板与Prometheus
+## 4.1 Graph面板与Prometheus
 
 Graph面板通过折线图或者柱状图的形式，能够展示监控样本数据在一段时间内的变化趋势，因此其天生适合Prometheus中的Counter和Gauge类型的监控指标的可视化，对于Histogram类型的指标也可以支持，不过可视化效果不如Heatmap Panel来的直观。
 
-## 2.2 使用Graph面板可视化Counter/Gauge
+## 4.2 使用Graph面板可视化Counter/Gauge
 
 以主机为例，CPU使用率的变化趋势天然适用于使用Grapn面板来进行展示：
 
@@ -173,7 +230,7 @@ Graph面板则会在图表中显示一条阈值，并且将所有高于该阈�
 
 
 
-## 2.3 使用Graph面板可视化Histogram
+## 4.3 使用Graph面板可视化Histogram
 
 以Prometheus自身的监控指标prometheus_tsdb_compaction_duration为例，该监控指标记录了Prometheus进行数据压缩任务的运行耗时的分布统计情况。如下所示，是Prometheus返回的样本数据：
 
@@ -211,12 +268,12 @@ Graph面板重新计算了Bucket边界，如下所示，在0~1ms范围内的任�
 不过通过Graph面板展示Histogram也并不太直观，其并不能直接反映出Bucket的大小以及分布情况，因此在Grafana V5版本以后更推荐使用Heatmap面板的方式展示Histogram样本数据。关于Heatmap面板的使用将会在接下来的部分介绍。
 
 
-# 3 分布统计_Heatmap面板
+# 5 分布统计_Heatmap面板
 
 
 Heatmap是是Grafana v4.3版本以后新添加的可视化面板，通过热图可以直观的查看样本的分布情况。在Grafana v5.1版本中Heatmap完善了对Prometheus的支持。这部分，将介绍如何使用Heatmap Panel实现对Prometheus监控指标的可视化。
 
-## 3.1 使用Heatmap可视化Histogram样本分布情况
+## 5.1 使用Heatmap可视化Histogram样本分布情况
 
 在上一小节中，我们尝试了使用Graph面板来可视化Histogram类型的监控指标prometheus_tsdb_compaction_duration_bucket。虽然能展示各个Bucket区间内的样本分布，但是无论是以线图还是柱状图的形式展示，都不够直观。对于Histogram类型的监控指标来说，更好的选择是采用Heatmap Panel，如下所示，Heatmap Panel可以自动对Histogram类型的监控指标分布情况进行计划，获取到每个区间范围内的样本个数，并且以颜色的深浅来表示当前区间内样本个数的大小。而图形的高度，则反映出当前时间点，样本分布的离散程度。
 
@@ -255,7 +312,7 @@ Heapmap Panel编辑页面
 
  
 
-## 3.2 使用Heatmap可视化其它类型样本分布情况
+## 5.2 使用Heatmap可视化其它类型样本分布情况
 
 对于非Histogram类型，由于其监控样本中并不包含Bucket相关信息，因此在**Metrics选项中**需要定义**Format as**为**Time series**，如下所示：
 
@@ -280,7 +337,7 @@ Bucket分布情况
 
 
 
-# 4 当前状态_SingleStat面板
+# 6 当前状态_SingleStat面板
 
 
 Singlem Panel侧重于展示系统的当前状态而非变化趋势。如下所示，在以下场景中特别适用于使用SingleStat：
@@ -296,7 +353,7 @@ SingleStat Panel示例
 
 
 
-## 4.1 使用SingleStat Panel
+## 6.1 使用SingleStat Panel
 
 
 

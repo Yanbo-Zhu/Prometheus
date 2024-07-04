@@ -1,5 +1,10 @@
 
 
+抓取endpoint是一个实例，一般就是一个进程。
+多个进程组成一个任务，主要是为了扩容和可靠性。
+
+
+
 在上一小节中，通过在prometheus.yml配置文件中，添加如下配置。我们让Prometheus可以从node exporter暴露的服务中获取监控指标数据。
 
 ```
@@ -11,6 +16,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9100']
 ```
+
 
 # 1 instance 
 

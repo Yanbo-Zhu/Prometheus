@@ -10,12 +10,65 @@
 
 这里为了能够采集到主机的运行指标如CPU, 内存，磁盘等信息。我们可以使用[Node Exporter](https://github.com/prometheus/node_exporter)。
 
+
+## 1.1 二进制安装 
+
 Node Exporter同样采用Golang编写，并且不存在任何的第三方依赖，只需要下载，解压即可运行。可以从[https://prometheus.io/download/](https://prometheus.io/download/)获取最新的node exporter版本的二进制包。
 
 ```
 curl -OL https://github.com/prometheus/node_exporter/releases/download/v0.15.2/node_exporter-0.15.2.darwin-amd64.tar.gz
 tar -xzf node_exporter-0.15.2.darwin-amd64.tar.gz
 ```
+然后移动到/opt/prometheus文件夹里面，没有该文件夹则创建
+
+
+
+## 1.2 Docker安装
+
+
+
+使用Docker运行，测试在Linux可以，在Mac不行：
+
+docker run --rm --net=host --pid=host -v "/:/host:ro,rslave" \
+  prom/node-exporter --path.rootfs=/host
+
+
+在Darwin下，还是直接运行二进制比较好，注意还是需要允许运行会提示是恶意软件：
+./node_exporter-1.3.1.darwin-amd64/node_exporter
+
+
+Darwin下测试用，也可以直接非host方式运行：
+docker run --rm -p 9100:9100 \
+
+
+
+# 2 编译执行
+
+make
+./node_exporter
+
+
+# 3 Prometheus配置文件prometheus.yml
+
+scrape_configs:
+  - job_name: "node"
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["host.docker.internal:9100"]
+
+
+
+# 4 启动 node_exporter的方式 
+
+## 4.1 docker的方式启动
+
+启动服务：
+docker run --rm -it -v `pwd`/prometheus.yml:/etc/prometheus/prometheus.yml \
+  -p 9090:9090 prom/prometheus
+
+
+## 4.2 直接启动
 
 运行node exporter:
 
@@ -24,6 +77,16 @@ cd node_exporter-0.15.2.darwin-amd64
 cp node_exporter-0.15.2.darwin-amd64/node_exporter /usr/local/bin/
 node_exporter
 ```
+
+
+启动 node_exporter的方式2
+root用户下启动
+输入:
+```bash
+nohup ./consul_exporter   >/dev/null   2>&1 &
+```
+
+
 
 启动成功后，可以看到以下输出：
 
@@ -35,11 +98,9 @@ INFO[0000] Listening on :9100                            source="node_exporter.g
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPMFlGDFIX7wuLhSHx9%252F-LPMFp6oc_SZOU4__NeX%252Fnode_exporter_home_page.png%3Fgeneration%3D1540136067584405%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=c5432eb&sv=1)
 
-Node Exporter页面
 
 
-
-## 1.1 初始Node Exporter监控指标
+# 5 初始Node Exporter监控指标
 
 访问[http://localhost:9100/metrics](http://localhost:9100/metrics)，可以看到当前node exporter获取到的当前主机的所有监控数据，如下所示：
 
@@ -74,7 +135,7 @@ node_load1 3.0703125
 - process_*：node exporter自身进程相关运行指标
 
 
-# 2 从Node Exporter收集监控数据
+# 6 从Node Exporter收集监控数据
 
 为了能够让Prometheus Server能够从当前node exporter获取到监控数据，这里需要修改Prometheus配置文件。编辑prometheus.yml并在scrape_configs节点下添加以下内容:
 

@@ -12,6 +12,10 @@
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVT4hCAm7HWaP8rOjeF%252F-LPSBoeAqGV2mX0ZVbLf%252Fprometheus-exporter.png%3Fgeneration%3D1546693045344568%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=aed228b0&sv=1)
 
 
+
+>  除了服务端的监控，可以监控应用服务。Prometheus 监控应用的方式非常简单，只需要进程暴露了一个用于获取当前监控样本数据的 HTTP 访问地址。这样的一个程序称为Exporter，Exporter 的实例称为一个 Target 。Prometheus 通过轮训的方式定时从这些 Target 中获取监控数据样本，对于应用来讲，只需要暴露一个包含监控数据的 HTTP 访问地址即可，当然提供的数据需要满足一定的格式，这个格式就是 Metrics 格式: `<metric name>{ label_name=label_value, ...}` 。label name是标签,label value是标签的值。
+
+
 # 1 Exporter的来源
 
 从Exporter的来源上来讲，主要分为两类：

@@ -15,6 +15,9 @@ curl -LO https://github.com/prometheus/alertmanager/releases/download/v$VERSION/
 tar xvf alertmanager-$VERSION.darwin-amd64.tar.gz
 ```
 
+然后移动到/opt/prometheus文件夹里面，没有该文件夹则创建
+
+
 
 2 **创建alertmanager配置文件**
 
@@ -61,6 +64,16 @@ Alermanager会将数据保存到本地中，默认的存储路径为`data/`。�
 
 用户也在启动Alertmanager时使用参数修改相关配置。`--config.file`用于指定alertmanager配置文件路径，`--storage.path`用于指定数据存储路径。
 
+----
+
+
+root用户下启动
+
+输入:
+nohup ./alertmanager   >/dev/null   2>&1 &
+
+启动成功之后，在浏览器上输入 ip+9093可以查看相关信息
+
 
 
 4 **查看运行状态**
@@ -69,7 +82,7 @@ Alertmanager启动后可以通过9093端口访问，[http://192.168.33.10:9093](
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPujYsCK-hIak6Ocg37%252F-LPuj_Z8Hu2c8ZMv09bH%252Falertmanager.png%3Fgeneration%3D1540731330971237%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=bc0a914f&sv=1)
 
-
+![](image/1138196-20210405121426610-120778138.png)
 
 Alert菜单下可以查看Alertmanager接收到的告警内容。Silences菜单下则可以通过UI创建静默规则，这部分我们会在后续部分介绍。进入Status菜单，可以看到当前系统的运行状态以及配置信息。
 
