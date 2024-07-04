@@ -1,0 +1,249 @@
+{
+  "main": {
+    "id": "73910c6db37f54b5",
+    "type": "split",
+    "children": [
+      {
+        "id": "64e0e1d6f03baa51",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9821b2ef77504a57",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "08_集群和高可用/08_06_AlertManager高可用.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "1f4467ae52d9c434",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "10_监控kubernetes/10_04_监控Kubernetes集群.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "cf1f526528de6d81",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "01_总览/01_01_学习资料.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "cac95977d4ff345f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "98_PromQL/98_04_PromQL操作符.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 3
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d63ed8902d328720",
+    "type": "split",
+    "children": [
+      {
+        "id": "fbc964441a716b0e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "37697c9a8a5e963b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "13691f685680e6d7",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "黑盒",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "62d799071a549d77",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "122c79580ae4be63",
+    "type": "split",
+    "children": [
+      {
+        "id": "70630e38fa91f719",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "068ae674e2e22bf7",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "98_PromQL/98_04_PromQL操作符.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "16834eb5ee2def29",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "98_PromQL/98_04_PromQL操作符.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "a1a55022d715fd74",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "c280d9136ad9045e",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              }
+            }
+          },
+          {
+            "id": "d6bbd0bbfac0a76d",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "98_PromQL/98_04_PromQL操作符.md"
+              }
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 271.5
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "markdown-importer:打开 Markdown 格式转换器": false,
+      "workspaces:管理工作区布局": false
+    }
+  },
+  "active": "cac95977d4ff345f",
+  "lastOpenFiles": [
+    "98_PromQL/98_07_HTTPAPI中使用PromQL.md",
+    "12_Prometheus_HttpAPI/12_01_通过API访问的返回值.md",
+    "01_总览/01_01_学习资料.md",
+    "12_Prometheus_HttpAPI",
+    "06_Exporter/06_06_proemetheus多实例采集.md",
+    "06_Exporter/06_07_采集指标分类.md",
+    "06_Exporter/image/1545252574-5ff7d0d0053c1.webp",
+    "06_Exporter/image/1772679997-5ff7d097ce3c8.webp",
+    "06_Exporter/image/1011751003-5ff7d04aca40d.webp",
+    "06_Exporter/image/Pasted image 20240703224216.png",
+    "06_Exporter/06_04_网络探测_BlockboxExporter.md",
+    "04_基本操作/04_01_任务和实例_job和instance.md",
+    "06_Exporter/image/image.webp",
+    "06_Exporter/image",
+    "02_基本/02_01_概论.md",
+    "07_数据可视化/07_03_Gafana面板2.md",
+    "07_数据可视化/07_04_模板化Dashboard.md",
+    "07_数据可视化/07_03_Grafana面板.md",
+    "98_PromQL/98_03_表达式.md",
+    "98_PromQL/98_02_理解时间序列.md",
+    "08_集群和高可用/08_04_联邦集群.md",
+    "04_基本操作/04_02_prometheus配置文件解析.md",
+    "98_PromQL/98_02_Metrics类型.md",
+    "98_PromQL/98_01_基础介绍.md",
+    "04_基本操作/image/Pasted image 20240703220830.png",
+    "04_基本操作/image",
+    "08_集群和高可用/08_01_总览.md",
+    "08_集群和高可用/image/Pasted image 20240703220559.png",
+    "08_集群和高可用/image",
+    "02_基本/02_02_Prometheus核心组件.md",
+    "03_安装/03_01_Prometheus的安装.md",
+    "09_Prometheus服务发现/09_01_Prometheus与服务发现.md",
+    "11_PrometheusOperator/11_04_在Prometheus Operator中使用自定义配置.md",
+    "11_PrometheusOperator/11_01_什么是PrometheusOperator.md",
+    "11_PrometheusOperator/11_03_使用Operator管理监控配置.md",
+    "11_PrometheusOperator/11_02_使用Operator管理Prometheus.md",
+    "10_监控kubernetes/10_04_监控Kubernetes集群.md",
+    "11_PrometheusOperator",
+    "10_监控kubernetes",
+    "09_Prometheus服务发现",
+    "08_集群和高可用",
+    "07_数据可视化",
+    "06_Exporter",
+    "99_terraform-docs/image/Pasted image 20240302164412.png",
+    "07_02_AWS实践/image/Pasted image 20231203142221.png",
+    "07_02_AWS实践/image/Pasted image 20231203141947.png"
+  ]
+}
