@@ -6,7 +6,7 @@ Alertmanager和Prometheus Server一样均采用Golang实现，并且没有第三
 # 1 使用二进制包部署AlertManager
 
 
-1 **获取并安装软件包**
+## 1.1 **获取并安装软件包**
 
 Alertmanager最新版本的下载地址可以从Prometheus官方网站[https://prometheus.io/download/](https://prometheus.io/download/)获取。
 ```
@@ -18,8 +18,7 @@ tar xvf alertmanager-$VERSION.darwin-amd64.tar.gz
 然后移动到/opt/prometheus文件夹里面，没有该文件夹则创建
 
 
-
-2 **创建alertmanager配置文件**
+## 1.2 **创建alertmanager配置文件**
 
 Alertmanager解压后会包含一个默认的alertmanager.yml配置文件，内容如下所示：
 
@@ -55,7 +54,7 @@ Alertmanager的配置主要包含两个部分：路由(route)以及接收器(rec
 
 
 
-3 **启动Alertmanager**
+## 1.3 **启动Alertmanager**
 
 Alermanager会将数据保存到本地中，默认的存储路径为`data/`。因此，在启动Alertmanager之前需要创建相应的目录：
 ```
@@ -76,7 +75,7 @@ nohup ./alertmanager   >/dev/null   2>&1 &
 
 
 
-4 **查看运行状态**
+## 1.4 **查看运行状态**
 
 Alertmanager启动后可以通过9093端口访问，[http://192.168.33.10:9093](http://192.168.33.10:9093)
 
@@ -87,11 +86,79 @@ Alertmanager启动后可以通过9093端口访问，[http://192.168.33.10:9093](
 Alert菜单下可以查看Alertmanager接收到的告警内容。Silences菜单下则可以通过UI创建静默规则，这部分我们会在后续部分介绍。进入Status菜单，可以看到当前系统的运行状态以及配置信息。
 
 
+## 1.5 开机自启动
+
+```shell
+# 进入下载目录  
+[root@node00 ~]# cd /usr/src/  
+# 下载alertmanager  
+[root@node00 src]# wget https://github.com/prometheus/alertmanager/releases/download/v0.19.0/alertmanager-0.19.0.linux-amd64.tar.gz  
+# 解压  
+[root@node00 src]# tar xf alertmanager-0.19.0.linux-amd64.tar.gz 
+[root@node00 src]# ll
+total 126440
+drwxr-xr-x  2 3434 3434       93 Sep  3 11:39 alertmanager-0.19.0.linux-amd64
+-rw-r--r--  1 root root 24201990 Sep  3 11:39 alertmanager-0.19.0.linux-amd64.tar.gz
+-rw-r--r--  1 root root     6930 Sep 25 04:33 a.txt
+-rw-r--r--  1 root root 39965581 Sep 24 20:53 consul_1.6.1_linux_amd64.zip
+-rw-r--r--  1 root root  4077560 Sep 10 20:20 consul-template_0.22.0_linux_amd64.tgz
+drwxr-xr-x. 2 root root        6 Nov  5  2016 debug
+drwxr-xr-x. 2 root root        6 Nov  5  2016 kernels
+-rw-r--r--  1 root root  8083296 Sep 20 21:08 node_exporter-0.18.1.linux-amd64.tar.gz
+-rw-r--r--  1 root root 53127635 Sep 20 05:05 prometheus-2.12.0.linux-amd64.tar.gz  
+  
+# 部署到特定位置
+[root@node00 src]# mv alertmanager-0.19.0.linux-amd64 /usr/local/prometheus/
+[root@node00 src]# cd /usr/local/prometheus/
+# 查看目录情况
+[root@node00 prometheus]# ll
+total 4
+drwxr-xr-x 2       3434       3434   93 Sep  3 11:39 alertmanager-0.19.0.linux-amd64
+lrwxrwxrwx 1 prometheus prometheus   29 Sep 20 05:06 prometheus -> prometheus-2.12.0.linux-amd64
+drwxr-xr-x 6 prometheus prometheus 4096 Sep 26 06:01 prometheus-2.12.0.linux-amd64  
+# 创建软连接
+[root@node00 prometheus]# ln -s alertmanager-0.19.0.linux-amd64 alertmanager  
+# 确认软连接
+[root@node00 prometheus]# ll
+total 4
+lrwxrwxrwx 1 root       root         31 Sep 27 03:12 alertmanager -> alertmanager-0.19.0.linux-amd64
+drwxr-xr-x 2       3434       3434   93 Sep  3 11:39 alertmanager-0.19.0.linux-amd64
+lrwxrwxrwx 1 prometheus prometheus   29 Sep 20 05:06 prometheus -> prometheus-2.12.0.linux-amd64
+drwxr-xr-x 6 prometheus prometheus 4096 Sep 26 06:01 prometheus-2.12.0.linux-amd64
+# 准备开机自启配置文件
+[root@node00 alertmanager]# cd /usr/lib/systemd/system/
+[root@node00 system]# cat alertmanager.service 
+[Unit]
+Description=alertmanager
+After=network.target 
+
+[Service]
+User=prometheus
+Group=prometheus
+WorkingDirectory=/usr/local/prometheus/alertmanager
+ExecStart=/usr/local/prometheus/alertmanager/alertmanager  --log.level=debug --log.format=json  
+
+# ExecStart=/usr/local/prometheus/alertmanager/alertmanager  
+
+[Install] WantedBy=multi-user.target   
+  
+# 修改权限  
+[root@node00 alertmanager]# chown prometheus:prometheus /usr/local/prometheus/alertmanager -R  
+# 启动
+[root@node00 alertmanager]# systemctl restart alertmanager  
+# 查看状态
+[root@node00 alertmanager]# systemctl status alertmanager  
+# 开机自启
+[root@node00 system]# systemctl enable alertmanager
+```
+
+
 # 2 关联Prometheus与Alertmanager
 
 在Prometheus的架构中被划分成两个独立的部分。Prometheus负责产生告警，而Alertmanager负责告警产生后的后续处理。因此Alertmanager部署完成后，需要在Prometheus中设置Alertmanager相关的信息。
 
 编辑Prometheus配置文件prometheus.yml,并添加以下内容
+/usr/local/prometheus/prometheus/prometheus.yml
 
 ```
 alerting:

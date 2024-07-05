@@ -73,3 +73,160 @@ instance_cpu_time_ns{app="fox", proc="widget", rev="4d3a513", env="prod", job="c
 假设一个服务实例只有一个时间序列数据，那么我们可以通过下面表达式统计出每个应用的实例数量：
 `count(instance_cpu_time_ns) by (app)`
 
+
+# 2 例子2
+
+https://www.cnblogs.com/zhaojiedi1992/p/zhaojiedi_liunx_63_prometheus_promql.html
+
+Prometheus提供了一种名为PromQL (Prometheus查询语言)的函数式查询语言，允许用户实时选择和聚合时间序列数据。表达式的结果既可以显示为图形，也可以在Prometheus的表达式浏览器中作为表格数据查看，或者通过HTTP API由外部系统使用。
+
+准备工作
+在进行查询，这里提供下我的配置文件如下
+```yaml
+[root@node00 prometheus]# cat prometheus.yml
+# my global config
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+    - targets: ['localhost:9090']
+  - job_name: "node"
+    file_sd_configs:
+    - refresh_interval: 1m
+      files: 
+      - "/usr/local/prometheus/prometheus/conf/node*.yml"
+remote_write:
+  - url: "http://localhost:8086/api/v1/prom/write?db=prometheus"
+
+remote_read:
+  - url: "http://localhost:8086/api/v1/prom/read?db=prometheus"
+
+
+[root@node00 prometheus]# cat conf/node-dis.yml 
+- targets: 
+  - "192.168.100.10:20001"
+  labels: 
+    __datacenter__: dc0
+    __hostname__: node00
+    __businees_line__: "line_a"
+    __region_id__: "cn-beijing"
+    __availability_zone__: "a"
+- targets: 
+  - "192.168.100.11:20001"
+  labels: 
+    __datacenter__: dc1
+    __hostname__: node01
+    __businees_line__: "line_a"
+    __region_id__: "cn-beijing"
+    __availability_zone__: "a"
+- targets: 
+  - "192.168.100.12:20001"
+  labels: 
+    __datacenter__: dc0
+    __hostname__: node02
+    __businees_line__: "line_c"
+    __region_id__: "cn-beijing"
+    __availability_zone__: "b"
+```
+
+
+## 2.1 简单时序查询
+
+### 2.1.1 直接查询特定metric_name
+
+
+```
+# 节点的forks的总次数
+node_forks_total
+#结果如下
+
+Element	Value
+node_forks_total{instance="192.168.100.10:20001",job="node"} 	201518
+node_forks_total{instance="192.168.100.11:20001",job="node"} 	23951
+node_forks_total{instance="192.168.100.12:20001",job="node"} 	24127
+```
+
+
+
+### 2.1.2 带标签的查询
+```
+
+node_forks_total{instance="192.168.100.10:20001"}
+# 结果如下
+
+Element	Value
+node_forks_total{instance="192.168.100.10:20001",job="node"} 	201816
+
+```
+
+```
+node_forks_total{instance="192.168.100.10:20001",job="node"}
+
+Element	Value
+node_forks_total{instance="192.168.100.10:20001",job="node"} 	201932
+```
+
+### 2.1.3 查询2分钟的时序数值
+
+```
+node_forks_total{instance="192.168.100.10:20001",job="node"}[2m]
+
+Element	Value
+node_forks_total{instance="192.168.100.10:20001",job="node"} 	201932 @1569492864.036
+201932 @1569492879.036
+201932 @1569492894.035
+201932 @1569492909.036
+201985 @1569492924.036
+201989 @1569492939.036
+201993 @1569492954.036
+```
+
+
+
+## 2.2 正则匹配
+
+```
+node_forks_total{instance=~"192.168.*:20001",job="node"}
+
+Element	Value
+node_forks_total{instance="192.168.100.10:20001",job="node"} 	202107
+node_forks_total{instance="192.168.100.11:20001",job="node"} 	24014
+node_forks_total{instance="192.168.100.12:20001",job="node"} 	24186
+```
+
+
+## 2.3 子查询 
+
+```
+# 过去的10分钟内， 每分钟计算下过去5分钟的一个速率值。 一个采集10m/1m一共10个值。
+rate(node_cpu_seconds_total{cpu="0",instance="192.168.100.10:20001",job="node",mode="idle"}[5m])[10m:1m]
+
+|Element|Value|
+|---|---|
+|{cpu="0",instance="192.168.100.10:20001",job="node",mode="idle"}|0.9865228543057867 @1569494040  <br>0.9862807017543735 @1569494100  <br>0.9861087231885309 @1569494160  <br>0.9864946894550303 @1569494220  <br>0.9863192502430038 @1569494280  <br>0.9859649122807017 @1569494340  <br>0.9859298245613708 @1569494400  <br>0.9869122807017177 @1569494460  <br>0.9867368421052672 @1569494520  <br>0.987438596491273 @1569494580|
+
+```
+

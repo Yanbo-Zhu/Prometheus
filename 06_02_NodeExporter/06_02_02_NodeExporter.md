@@ -1,5 +1,13 @@
 
-# 1 Textfile Collector
+# 1 #
+
+![](https://img2018.cnblogs.com/blog/429277/201909/429277-20190921111241432-425608334.png)
+
+
+![](https://img2018.cnblogs.com/blog/429277/201909/429277-20190921111334050-1689683596.png)
+
+
+# 2 Textfile Collector
 
 Node Exporter可以采集文件，比如/etc/node-exporter/node-meta.prom，或者指定路径：
     mkdir node0 && echo 'machine_role{role="apache"} 1' > node0/roles.prom
@@ -18,7 +26,7 @@ machine_role
 machine_role{instance="9100", job="node0", role="apache"} 1
 
 
-# 2 Lighthouse
+# 3 Lighthouse
 
 在LightHouse上运行Prometheus：
 

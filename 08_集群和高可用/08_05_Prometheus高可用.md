@@ -12,7 +12,24 @@ Prometheus的本地存储给Prometheus带来了简单高效的使用体验，可
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVSVjCoJ2ZKnv7dYe6V%252F-LPufOd4LgRt7mUDTV8C%252Fpromethues-ha-01.png%3Fgeneration%3D1546683354194329%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=d194f329&sv=1)
 
+![](https://img2018.cnblogs.com/blog/429277/201909/429277-20190930134826749-1610648523.png)
+
 基本的HA模式只能确保Promthues服务的可用性问题，但是不解决Prometheus Server之间的数据一致性问题以及持久化问题(数据丢失后无法恢复)，也无法进行动态的扩展。因此这种部署方式适合监控规模不大，Promthues Server也不会频繁发生迁移的情况，并且只需要保存短周期监控数据的场景。
+
+
+ 这个架构可以保证服务的高可靠性，但是并不能解决多个prometheus实例之间的资料一致性问题，也无法数据进行长期存储，且单一实例无法负荷的时候，将延伸出性能瓶颈问题，因此这种架构适合小规模进行监控。
+
+优点：
+
+- 服务能够提供基本的可靠性
+- 适合小规模监控，只需要短期存储。
+
+缺点：
+
+- 无法扩展
+- 数据有不一致问题
+- 无法长时间保持
+- 当承载量过大时，单一prometheus无法负荷。
 
 # 2 基本HA + 远程存储
 
@@ -20,15 +37,37 @@ Prometheus的本地存储给Prometheus带来了简单高效的使用体验，可
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVSVjCoJ2ZKnv7dYe6V%252F-LPufOd602YogyiIIadr%252Fprometheus-ha-remote-storage.png%3Fgeneration%3D1546683353605259%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=b3291789&sv=1)
 
+![](https://img2018.cnblogs.com/blog/429277/201909/429277-20190930135544455-1821876227.png)
+
 HA + Remote Storage
 
 在解决了Promthues服务可用性的基础上，同时确保了数据的持久化，当Promthues Server发生宕机或者数据丢失的情况下，可以快速的恢复。 同时Promthues Server可能很好的进行迁移。因此，该方案适用于用户监控规模不大，但是希望能够将监控数据持久化，同时能够确保Promthues Server的可迁移性的场景。
+
+该架构解决了数据持久性问题， 当prometheus server发生故障、重启的时候可以快速恢复数据，同时prometheus可以很好的进行迁移，但是这也只适合小规模的监测使用。
+
+优点：
+
+- 服务能够提供可靠性
+- 适合小规模监测
+- 数据能够持久化存储
+- prometheus可以灵活迁移
+- 能够得到数据还原
+
+缺点：
+
+- 不适合大规模监控
+- 当承载量过大时，单一prometheus server无法负荷
+
 
 
 
 # 3 基本HA + 远程存储 + 联邦集群
 
 当单台Promthues Server无法处理大量的采集任务时，用户可以考虑基于Prometheus联邦集群的方式将监控采集任务划分到不同的Promthues实例当中即在任务级别功能分区。
+
+服务高可靠性结合远端存储和联邦（基本ha + remote storage + federation）
+
+这种架构主要是解决单一 prometheus server无法处理大量数据收集的问题，而且加强了prometheus的扩展性，通过将不同手机任务分割到不同的prometheus实力上去。
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVSVjCoJ2ZKnv7dYe6V%252F-LPufOd8-X3EaOQhjM7L%252Fprometheus-ha-rs-fedreation.png%3Fgeneration%3D1546683353680741%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=5e38c187&sv=1)
 
@@ -42,6 +81,26 @@ HA + Remote Storage
 场景二：多数据中心
 
 这种模式也适合与多数据中心的情况，当Promthues Server无法直接与数据中心中的Exporter进行通讯时，在每一个数据中部署一个单独的Promthues Server负责当前数据中心的采集任务是一个不错的方式。这样可以避免用户进行大量的网络配置，只需要确保主Promthues Server实例能够与当前数据中心的Prometheus Server通讯即可。 中心Promthues Server负责实现对多数据中心数据的聚合。
+
+
+
+该架构通常有2种使用场景：
+- 单一资料中心，但是有大量收集任务，这种场景行prometheus server 可能会发生性能上的瓶颈，主要是单一prometheus server 要承载大量资料书籍任务， 这个时候通过federation来将不同类型的任务分到不同的prometheus 子server 上， 再有上层完成资料聚合。
+- 多资料中心， 在多资料中心下，这种架构也能够使用，当不同资料中心的exporter无法让最上层的prometheus 去拉取资料是， 就能通过federation来进行分层处理， 在每个资料中心建立一组收集该资料中心的prometheus server  ， 在由上层的prometheus 来进行抓取， 并且也能够依据每个收集任务的承载量来部署分级，但是需要确保上下层的prometheus server 是互通的。
+
+优点
+- 服务能够提供可靠性
+- 资料能够被持久性保持在第三方存储系统中
+- promethues server 能够迁移
+- 能够得到资料还原
+- 能够依据不同任务进行层级划分
+- 适合不同规模监控
+- 能够很好的扩展
+
+缺点
+- 部署架构负载
+- 维护困难性增加
+- 在kubernetes部署不易
 
 
 # 4 按照实例进行功能分区

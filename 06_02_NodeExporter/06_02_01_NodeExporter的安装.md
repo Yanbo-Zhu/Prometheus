@@ -48,17 +48,93 @@ make
 ./node_exporter
 
 
+# 7 测试node_exporter
+
+```
+[root@node00 ~]# curl 127.0.0.1:9100/metrics<br># 这里可以看到node_exporter暴露出来的数据。
+```
+
+
+
+# 8 配置node_exporter开机自启
+
+
+```
+[root@node00 system]# cd /usr/lib/systemd/system# 准备systemd文件
+[root@node00 systemd]# cat node_exporter.service 
+[Unit]
+Description=node_exporter
+After=network.target 
+
+[Service]
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/exporter/node_exporter/node_exporter\
+          --web.listen-address=:20001\
+          --collector.systemd\
+          --collector.systemd.unit-whitelist=(sshd|nginx).service\
+          --collector.processes\
+          --collector.tcpstat\
+          --collector.supervisord
+[Install]
+WantedBy=multi-user.target
+# 启动
+[root@node00 exporter]# systemctl restart node_exporter# 查看状态
+[root@node00 exporter]# systemctl status node_exporter
+● node_exporter.service - node_exporter
+   Loaded: loaded (/usr/lib/systemd/system/node_exporter.service; enabled; vendor preset: disabled)
+   Active: active (running) since Fri 2019-09-20 22:43:09 EDT; 5s ago
+ Main PID: 88262 (node_exporter)
+   CGroup: /system.slice/node_exporter.service
+           └─88262 /usr/local/exporter/node_exporter/node_exporter --collector.systemd --collector.systemd.unit-whitelist=(sshd|nginx).service
+
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - stat" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - systemd" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - textfile" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - time" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - timex" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - uname" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - vmstat" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - xfs" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg=" - zfs" source="node_exporter.go:104"
+Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" level=info msg="Listening on :9100" source="node_exporter.go:170"# 开机自启[root@node00 exporter]# systemctl enable node_exporter
+```
+
+
+
 # 3 Prometheus配置文件prometheus.yml
 
+```yaml
 scrape_configs:
   - job_name: "node"
     metrics_path: "/metrics"
     scrape_interval: 5s
     static_configs:
       - targets: ["host.docker.internal:9100"]
+```
 
 
+```
+[root@node00 prometheus]# cd /usr/local/prometheus/prometheus
+[root@node00 prometheus]# vim prometheus.yml
+# 在scrape_configs中加入job node ,最终scrape_configs如下配置
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
 
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+    - targets: ['localhost:9090']
+  - job_name: "node"
+    static_configs:
+    - targets: 
+      - "192.168.100.10:20001"
+
+[root@node00 prometheus]# systemctl restart prometheus 
+[root@node00 prometheus]# systemctl status prometheus
+```
 # 4 启动 node_exporter的方式 
 
 ## 4.1 docker的方式启动
@@ -99,6 +175,16 @@ INFO[0000] Listening on :9100                            source="node_exporter.g
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPMFlGDFIX7wuLhSHx9%252F-LPMFp6oc_SZOU4__NeX%252Fnode_exporter_home_page.png%3Fgeneration%3D1540136067584405%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=c5432eb&sv=1)
 
 
+```
+[root@node00 node_exporter]# ./node_exporter 
+INFO[0000] Starting node_exporter (version=0.18.1, branch=HEAD, revision=3db77732e925c08f675d7404a8c46466b2ece83e)  source="node_exporter.go:156"
+INFO[0000] Build context (go=go1.12.5, user=root@b50852a1acba, date=20190604-16:41:18)  source="node_exporter.go:157"
+INFO[0000] Enabled collectors:                           source="node_exporter.go:97"
+# 中间输出省略
+INFO[0000] Listening on :9100                            source="node_exporter.go:170"
+
+复制代码
+```
 
 # 5 初始Node Exporter监控指标
 

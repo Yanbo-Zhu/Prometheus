@@ -1,6 +1,8 @@
 
 告警能力在Prometheus的架构中被划分成两个独立的部分。如下所示，通过在Prometheus中定义AlertRule（告警规则），Prometheus会周期性的对告警规则进行计算，如果满足告警触发条件就会向Alertmanager发送告警信息。
 
+ > 在Prometheus的报警系统中，是分为2个部分的， 规则是配置是在prometheus中的， prometheus组件完成报警推送给alertmanager的， alertmanager然后管理这些报警信息，包括静默、抑制、聚合和通过电子邮件、on-call通知系统和聊天平台等方法发送通知。
+
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVMF4RtPS-2rjW9R-hG%252F-LPS9QhUbi37E1ZK8mXF%252Fprometheus-alert-artich.png%3Fgeneration%3D1546578333144123%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=57fb9de5&sv=1)
 
 Prometheus告警处理

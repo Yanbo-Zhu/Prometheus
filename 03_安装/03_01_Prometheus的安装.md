@@ -129,8 +129,56 @@ api_http_requests_total{method="POST", handler="/messages"}
 ```
 
 
+# 3 获取配置帮助
+
+```
+[root@node00 prometheus]# ./prometheus  --help 
+```
 
 
+
+# 4 配置开机自启动
+
+```sh
+
+# 进入systemd文件目录[root@node00 system]# cd /usr/lib/systemd/system# 编写prometheus systemd文件
+[root@node00 system]# cat prometheus.service 
+[Unit]
+Description=prometheus
+After=network.target 
+
+[Service]
+User=prometheus
+Group=prometheus
+WorkingDirectory=/usr/local/prometheus/prometheus
+ExecStart=/usr/local/prometheus/prometheus/prometheus
+[Install]
+WantedBy=multi-user.target
+
+
+# 启动
+[root@node00 system]# systemctl restart prometheus # 查看状态
+[root@node00 system]# systemctl status prometheus
+● prometheus.service - prometheus
+   Loaded: loaded (/usr/lib/systemd/system/prometheus.service; disabled; vendor preset: disabled)
+   Active: active (running) since Fri 2019-09-20 06:11:21 EDT; 4s ago
+ Main PID: 32871 (prometheus)
+   CGroup: /system.slice/prometheus.service
+           └─32871 /usr/local/prometheus/prometheus/prometheus
+
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.634Z caller=head.go:509 component=tsdb msg="replaying WAL, this may take awhile"
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.640Z caller=head.go:557 component=tsdb msg="WAL segment loaded" segment=0 maxSegment=3
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.640Z caller=head.go:557 component=tsdb msg="WAL segment loaded" segment=1 maxSegment=3
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.641Z caller=head.go:557 component=tsdb msg="WAL segment loaded" segment=2 maxSegment=3
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.641Z caller=head.go:557 component=tsdb msg="WAL segment loaded" segment=3 maxSegment=3
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.642Z caller=main.go:669 fs_type=XFS_SUPER_MAGIC
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.642Z caller=main.go:670 msg="TSDB started"
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.642Z caller=main.go:740 msg="Loading configuration file" filename=prometheus.yml
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.686Z caller=main.go:768 msg="Completed loading of configuration file" filename=prometheus.yml
+Sep 20 06:11:21 node00 prometheus[32871]: level=info ts=2019-09-20T10:11:21.686Z caller=main.go:623 msg="Server is ready to receive web requests."# 开机自启配置
+[root@node00 system]# systemctl enable prometheus
+Created symlink from /etc/systemd/system/multi-user.target.wants/prometheus.service to /usr/lib/systemd/system/prometheus.service.
+```
 
 
 

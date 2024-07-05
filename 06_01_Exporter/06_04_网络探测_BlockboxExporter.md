@@ -15,7 +15,7 @@ https://www.yuque.com/ssebank/eoudn8/bctqk1
 
 # 2 单独直接使用Blackbox Exporter
 
-Blackbox Exporter是Prometheus社区提供的官方黑盒监控解决方案，其允许用户通过：HTTP、HTTPS、DNS、TCP以及ICMP的方式对网络进行探测。
+> Blackbox Exporter是Prometheus社区提供的官方黑盒监控解决方案，其允许用户通过：HTTP、HTTPS、DNS、TCP以及ICMP的方式对网络进行探测。
 
 用户可以直接使用go get命令获取Blackbox Exporter源码并生成本地可执行文件：
 ```
@@ -110,9 +110,47 @@ probe_success 1
 从返回的样本中，用户可以获取站点的DNS解析耗时、站点响应时间、HTTP响应状态码等等和站点访问质量相关的监控指标，从而帮助管理员主动的发现故障和问题。
 
 
-# 3 在机器上部署 blackbox_exporter
+# 3 安装 blackbox_exporter
 
 - 项目地址 https://github.com/prometheus/blackbox_exporter
+
+```yaml
+# 进入下载目录
+[root@node00 ~]# cd /usr/src/
+# 下载
+[root@node00 src]# wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.15.1/blackbox_exporter-0.15.1.linux-amd64.tar.gz
+# 解压
+[root@node00 src]#  tar xf blackbox_exporter-0.15.1.linux-amd64.tar.gz 
+# 部署到特定位置
+[root@node00 src]# mv blackbox_exporter-0.15.1.linux-amd64 /usr/local/exporter/
+# 进入目录
+[root@node00 src]# cd /usr/local/exporter/
+# 软连接
+[root@node00 exporter]# ln -s blackbox_exporter-0.15.1.linux-amd64 blackbox_exporter
+# 进入自启目录
+[root@node00 exporter]#  cd /usr/lib/systemd/system
+# 配置blackbox的开机自启文件
+[root@node00 system]# cat blackbox_exporter.service 
+[Unit]
+Description=blackbox_exporter
+After=network.target 
+
+[Service]
+User=prometheus
+Group=prometheus
+WorkingDirectory=/usr/local/exporter/blackbox_exporter
+ExecStart=/usr/local/exporter/blackbox_exporter/blackbox_exporter
+[Install]
+WantedBy=multi-user.target
+
+# 启动
+[root@node00 system]# systemctl restart blackbox_exporter
+# 查看状态
+[root@node00 system]# systemctl status blackbox_exporter
+# 开机自启
+[root@node00 system]# systemctl enable blackbox_exporter
+```
+
 
 
 # 4 访问页面
@@ -223,9 +261,34 @@ scrape_configs:
 
 Blackbox Target实例
 
-接下来，我们将详细介绍Blackbox中常用的HTTP探针使用方式
 
+## 5.1 例子 
 
+```
+  - job_name: "blackbox"
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # Look for a HTTP 200 response.
+    file_sd_configs: 
+    - refresh_interval: 1m
+      files: 
+      - "/usr/local/prometheus/prometheus/conf/blackbox*.yml"
+    relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: 192.168.100.10:9115
+```
+
+```
+[root@node00 prometheus]# cat conf/blackbox-dis.yml 
+- targets:
+  - https://www.alibaba.com
+  - https://www.tencent.com
+  - https://www.baidu.com 
+```
 
 
 # 6 HTTP探针

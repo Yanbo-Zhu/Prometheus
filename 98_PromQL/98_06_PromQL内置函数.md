@@ -63,7 +63,15 @@ rate(node_cpu_seconds_total{cpu="0",mode="user"}[10s])
 >    Note: 注意如果采样是1m，那么时间范围就不能小于1m，否则会出现Empty query result。
 
 
-# 2 irate(v range-vector)
+# 2 irate(v range-vector): 计算速率
+
+```
+# 通过标签查询，特定实例特定job，特定cpu 在idle状态下的cpu次数速率
+irate(node_cpu_seconds_total{cpu="0",instance="192.168.100.10:20001",job="node",mode="idle"}[1m])
+
+Element	Value
+{cpu="0",instance="192.168.100.10:20001",job="node",mode="idle"} 	0.9833988932595507
+```
 
 
 为了解决该问题，PromQL提供了另外一个灵敏度更高的函数irate(v range-vector)。irate同样用于计算区间向量的计算率，但是其反应出的是瞬时增长率。irate函数是通过区间向量中最后两个样本数据来计算区间向量的增长速率。这种方式可以避免在时间窗口范围内的“长尾问题”，并且体现出更好的灵敏度，通过irate函数绘制的图标能够更好的反应样本数据的瞬时变化状态。
@@ -87,7 +95,24 @@ http_request_total{}[5m] # 区间向量表达式，选择以当前时间为基�
 在大多数情况下人们都倾向于使用某些量化指标的平均值，例如CPU的平均使用率、页面的平均响应时间。这种方式的问题很明显，以系统API调用的平均响应时间为例：如果大多数API请求都维持在100ms的响应时间范围内，而个别请求的响应时间需要5s，那么就会导致某些WEB页面的响应时间落到中位数的情况，而这种现象被称为长尾问题。
 
 
-# 3 预测Gauge指标变化趋势 predict_linear(v range-vector, t scalar)
+# 3 count_over_time： 计算特定的时序数据中的个数
+
+```
+# 这个数值个数和采集频率有关， 我们的采集间隔是15s，在一分钟会有4个点位数据。  
+count_over_time(node_boot_time_seconds[1m])  
+  
+
+|Element|Value|
+|---|---|
+|{instance="192.168.100.10:20001",job="node"}|4|
+|{instance="192.168.100.11:20001",job="node"}|4|
+|{instance="192.168.100.12:20001",job="node"}|4|
+```
+
+
+
+
+# 4 预测Gauge指标变化趋势 predict_linear(v range-vector, t scalar)
 
 在一般情况下，系统管理员为了确保业务的持续可用运行，会针对服务器的资源设置相应的告警阈值。例如，当磁盘空间只剩512MB时向相关人员发送告警通知。 这种基于阈值的告警模式对于当资源用量是平滑增长的情况下是能够有效的工作的。 但是如果资源不是平滑变化的呢？ 比如有些某些业务增长，存储空间的增长速率提升了高几倍。这时，如果基于原有阈值去触发告警，当系统管理员接收到告警以后可能还没来得及去处理问题，系统就已经不可用了。 因此阈值通常来说不是固定的，需要定期进行调整才能保证该告警阈值能够发挥去作用。 那么还有没有更好的方法吗？
 
@@ -99,7 +124,7 @@ predict_linear(node_filesystem_free{job="node"}[2h], 4 * 3600) < 0
 
 
 
-# 4 统计Histogram指标的分位数
+# 5 统计Histogram指标的分位数
 
 在本章的第2小节中，我们介绍了Prometheus的四种监控指标类型，其中Histogram和Summary都可以用于统计和分析数据的分布情况。区别在于Summary是直接在客户端计算了数据分布的分位数情况。而Histogram的分位数计算需要通过histogram_quantile(φ float, b instant-vector)函数进行计算。其中φ（0<φ<1）表示需要计算的分位数，如果需要计算中位数φ取值为0.5，以此类推即可。
 
@@ -132,7 +157,7 @@ histogram_quantile(0.5, http_request_duration_seconds_bucket)
 
 需要注意的是通过histogram_quantile计算的分位数，并非为精确值，而是通过http_request_duration_seconds_bucket和http_request_duration_seconds_sum近似计算的结果。
 
-# 5 动态标签替换
+# 6 动态标签替换
 
 一般来说来说，使用PromQL查询到时间序列后，可视化工具会根据时间序列的标签来渲染图表。例如通过up指标可以获取到当前所有运行的Exporter实例以及其状态：
 
@@ -177,7 +202,7 @@ up{host="localhost",instance="localhost:9100",job="node"} 1
 ```
 
 
-## 5.1 label_join函数
+## 6.1 label_join函数
 
 除了label_replace以外，Prometheus还提供了label_join函数，该函数可以将时间序列中v多个标签src_label的值，通过separator作为连接符写入到一个新的标签dst_label中:
 
@@ -188,7 +213,7 @@ label_join(v instant-vector, dst_label string, separator string, src_label_1 str
 label_replace和label_join函数提供了对时间序列标签的自定义能力，从而能够更好的于客户端或者可视化工具配合。
 
 
-# 6 CPU percent
+# 7 CPU percent
 
 计算CPU的百分比，原始数据是CPU时间，可以先计算idle时间比例：
 rate(node_cpu_seconds_total{mode="idle"}[30s])
@@ -203,7 +228,7 @@ min by(mode) (rate(node_cpu_seconds_total{mode="idle"}[30s]))
 (1 - min by(mode) (rate(node_cpu_seconds_total{mode="idle"}[30s]))) * 100
 
 
-# 7 min by
+# 8 min by
 
 取最小值时，取的是每个样本的最小值，比如两个CPU，如果取idle最小的，那是取每个样本最小的，相当于取最繁忙的那个值。
 
@@ -239,7 +264,7 @@ node_load1 // vector A
 
 
 
-# 8 Regex Match
+# 9 Regex Match
 
 可以选择两个CPU，用`cpu=~"[01]"`：
 
@@ -249,7 +274,7 @@ node_load1 // vector A
 
 这就是正则表达式匹配了。
 
-# 9 on
+# 10 on
 
 一对一的vector匹配，将vector变换成一组，参考：One-to-one vector matches
 
@@ -307,7 +332,7 @@ node_cpu_seconds_total{cpu="0",mode="system"} / on(instance) node_cpu_seconds_to
 如果不指定on，由于这两个数据集有很多不同的标签，所以不知道如何一对一的匹配数据，也当然不知道如何操作。
 
 
-# 10 group_left
+# 11 group_left
 
 多对一的vector匹配，参考：Many-to-one and one-to-many vector matches
 
@@ -402,7 +427,7 @@ sum by(sysname) (node_load1 * on(instance) group_left(sysname) node_uname_info)
 如果需要对结果算rate，不应该对最终结果算rate，应该先算rate后，再做group_left和sum。因为rate实际上是一个expr表达式，是可以对两个expr做group_left的。
 
 
-# 11 Join Custom Metrics
+# 12 Join Custom Metrics
 
 
 首先，我们先生成两个目录，放两个文件，给node_exporter抓取：
@@ -482,7 +507,7 @@ node_network_transmit_bytes_total{device="eth0"} // vector A
 后续就可以按照role聚合了。
 
 
-# 12 Embed group_left
+# 13 Embed group_left
 
 可以对指标进行多次JOIN，配置参考前一章PromQL: Join Custom Metrics。
 
