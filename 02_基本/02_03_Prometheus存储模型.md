@@ -88,8 +88,3 @@ prom/prometheus \
 ## 3.7 storage.local.checkpoint-interval
 
 进行checkpoint的时间间隔，即对尚未写入到磁盘的内存chunks执行checkpoint操作。
-
-
-
-
-

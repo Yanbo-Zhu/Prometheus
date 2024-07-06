@@ -9,12 +9,8 @@ https://www.cnblogs.com/JetpropelledSnake/p/16299415.html
 
 接下来将介绍在 PromQL 中有两种典型的匹配模式：一对一（one-to-one）,多对一（many-to-one）或一对多（one-to-many）。
 
-<<<<<<<< HEAD:98_PromQL/98_09_VectorMatching.md
 
 
-|||||||| parent of 538ddd5 (add files):98_PromQL/98_09_Vector matching.md
-========
->>>>>>>> 538ddd5 (add files):98_PromQL/98_09_集合匹配_VectorMatching.md
 # 1 一对一匹配
 
 一对一 匹配模式会从操作符两边表达式获取的瞬时向量依次比较并找到唯一匹配(标签完全一致)的样本值。默认情况下，使用表达式：
