@@ -23,7 +23,26 @@ Push系统 vs Pull系统
 - 松耦合的架构模式更适合于云原生的部署环境。
 
 
+# 1 
 
+从配置文档中不难发现Prometheus对服务发现进行了大量的支持，例如大家喜闻乐见的Consul、etcd和K8S。
+
+```
+<scrape_config>
+<tls_config>
+<azure_sd_config>
+<Consul_sd_config>
+<dns_sd_config>
+<ec2_sd_config>
+<openstack_sd_config>
+<file_sd_config>
+<gce_sd_config>
+<kubernetes_sd_config>
+<marathon_sd_config>
+<nerve_sd_config>
+<serverset_sd_config>
+<triton_sd_config>
+```
 
 
 
