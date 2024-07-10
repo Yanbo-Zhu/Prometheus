@@ -153,7 +153,7 @@ ExecStart=/usr/local/prometheus/alertmanager/alertmanager  --log.level=debug --
 ```
 
 
-# 2 Docker Compose 方式
+# 2 DockerCompose 方式
 
 https://hty1024.com/archives/prometheus-jian-kong-fang-an-xue-xi-bi-ji--san-grafana-de-an-zhuang-he-pei-zhi
 

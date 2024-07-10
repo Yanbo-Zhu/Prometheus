@@ -1,6 +1,7 @@
 
 在第1章中，我们已经初步了解了Node Exporter的使用场景和方法。本小节，将会介绍更多常用的Exporter用法。包括如何监控容器运行状态，如何监控和评估MySQL服务的运行状态以及如何通过Prometheus实现基于网络探测的黑盒监控。
 
+CAdvisor是Google开源的一款用于展示和分析容器运行状态的可视化工具。通过在主机上运行CAdvisor用户可以轻松的获取到当前主机上容器的运行统计信息，并以图表的形式向用户展示。
 
 # 1 容器监控：cAdvisor
 
@@ -24,7 +25,9 @@ CONTAINER           CPU %               MEM USAGE / LIMIT     MEM %             
 
 
 
-## 1.1 使用CAdvisor
+# 2 安装CAdvisor
+
+## 2.1 Docker的方式
 
 CAdvisor是Google开源的一款用于展示和分析容器运行状态的可视化工具。通过在主机上运行CAdvisor用户可以轻松的获取到当前主机上容器的运行统计信息，并以图表的形式向用户展示。
 
@@ -41,6 +44,78 @@ docker run \
   --name=cadvisor \
   google/cadvisor:latest
 ```
+
+
+## 2.2 DockerCompose方式
+
+1
+目录准备
+创建目录：
+```
+mkdir -pv /apps/exporter/cadvisor
+```
+
+2
+编辑 docker-compose.yml 文件
+```
+vim /apps/exporter/cadvisor/docker-compose.yml
+
+version: "3"
+services:
+  cadvisor:
+    image: zcube/cadvisor:v0.45.0
+    container_name: prometheus-cadvisor
+    hostname: cadvisor
+    restart: always
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8080:8080
+networks:
+  default:
+    external:
+      name: prometheus
+
+```
+
+3
+配置 docker 网段 prometheus
+```
+检查是否存在 prometheus 网段：
+docker network list
+
+若不存在，则创建：
+docker network create prometheus --subnet 10.21.22.0/24
+```
+
+4 
+启动 cadvisor 容器
+```
+cd /apps/exporter/cadvisor
+docker-compose up -d
+```
+
+
+5 
+检查 cadvisor 容器状态、查看 cadvisor 容器日志
+```
+cd /apps/exporter/cadvisor
+docker-compose ps
+docker-compose logs -f
+
+```
+
+
+
+
+
+
+
+# 3 查看数据 
 
 通过访问[http://localhost:8080](http://localhost:8080)可以查看，当前主机上容器的运行状态，如下所示：CAdvisor可视化：CPU总量
 
@@ -87,7 +162,7 @@ container_cpu_load_average_10s{container_label_maintainer="NGINX Docker Maintain
 
 
 
-# 2 与Prometheus集成
+# 4 配置 CAdvisor与Prometheus集成
 
 修改/etc/prometheus/prometheus.yml，将cAdvisor添加监控数据采集任务目标当中：
 ```
@@ -104,6 +179,15 @@ prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/dat
 ```
 
 
+以docker-compose的方式重启 Prometheus服务
+```
+cd /apps/prometheus
+docker-compose restart
+```
+
+
+检查 cadvisor 数据是否正常上报
+访问 Prometheus WebUI 的 targets 页面，检查 job 状态
 启动完成后，可以在Prometheus UI中查看到当前所有的Target状态：
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPSBn2UIikWwXuikSFl%252F-LPSBoepQ9HigII8j_bR%252Fprometheus_targetes_with_cadvisor.png%3Fgeneration%3D1540235679721167%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=98072b6e&sv=1)
 
@@ -171,4 +255,24 @@ sum(rate(container_fs_writes_bytes_total{image!=""}[1m])) without (device)
 
 
 
+# 5 配置 Grafana 看板
 
+登录 Grafana，导入对应的看板即可。
+看板获取地址：https://grafana.com/grafana/dashboards/?dataSource=prometheus&search=docker
+
+注意： 看板导入后需要修改数据源的ID
+
+    数据源查看方式： 在 Grafana 中进入 数据源详情 页面，浏览器 URL 的最后一段字符为该数据源的 ID。 如 URL 为 grafana/datasources/edit/6lbJpCb4z 时， 6lbJpCb4z 即为当前数据源的 ID
+    数据源替换方式： 编辑看板，查看看板的 JSON 数据，替换 datasource 中的 uid
+
+
+
+# 6 注意事项
+
+若启动 cadvisor 时提示 cadvisor Failed to start container manager: inotify_add_watch /sys/fs/cgroup/cpuacct,cpu: nosuchfile，则执行以下命令，重新挂载 /sys/fs/cgroup 
+
+```
+mount -o remount,rw '/sys/fs/cgroup'
+sudo  ln -s /sys/fs/cgroup/cpu,cpuacct /sys/fs/cgroup/cpuacct,cpu
+
+```
