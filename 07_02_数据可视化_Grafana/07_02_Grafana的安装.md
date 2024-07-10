@@ -1,6 +1,6 @@
 
 
-# 1 通过镜像安装 
+# 1 通过Docker安装 
 
 
 Grafana是一个开源的可视化平台，并且提供了对Prometheus的完整支持。
@@ -15,7 +15,97 @@ docker run -d -p 3000:3000 grafana/grafana
 
 
 
-# 2 通过二进制文件安装 
+# 2 使用 Docker Compose 安装（推荐）
+https://hty1024.com/archives/prometheus-jian-kong-fang-an-xue-xi-bi-ji--san-grafana-de-an-zhuang-he-pei-zhi
+
+
+1
+目录准备
+创建目录：
+
+```
+mkdir -pv /apps/grafana/{conf,data}
+
+
+```
+
+配置 data 目录权限：
+```
+chmod -R 777 /apps/grafana/data/
+```
+
+
+2 
+编辑 docker-compose.yml 文件
+
+```
+vim /apps/grafana/docker-compose.yml
+```
+
+```
+version: '3'
+	services:
+	  grafana:
+	    image: grafana/grafana:9.1.6
+	    container_name: prometheus-grafana
+	    restart: always
+	    privileged: true
+	    ports:
+	      - 13000:3000
+	    volumes:
+	      - /etc/localtime:/etc/localtime:ro
+	      - /apps/grafana/conf/grafana.ini:/etc/grafana/grafana.ini
+	      - /apps/grafana/data:/var/lib/grafana
+	networks:
+	  default:
+	    external:
+	      name: prometheus
+```
+
+
+3 编辑 grafana.ini 文件
+```
+vim /apps/grafana/conf/grafana.ini
+```
+
+grafana.ini 文件模板：https://github.com/grafana/grafana/blob/main/conf/defaults.ini
+grafana.ini 文件说明：https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana
+
+
+4 创建 docker 网段 prometheus
+检查是否已有 prometheus 网段：
+```
+docker network list
+```
+
+没有则创建
+```
+docker network create prometheus --subnet 10.21.22.0/24
+```
+
+
+5 启动 grafana 容器
+```
+cd /apps/grafana
+docker-compose up -d
+```
+
+
+6 检查 grafana 容器状态、查看 grafana 容器日志
+```
+cd /apps/grafana
+docker-compose ps
+docker-compose logs -f
+
+
+```
+
+7 
+访问 Grafana Web UI
+访问 Grafana Web UI
+默认用户名：admin ，默认密码：admin
+
+# 3 通过二进制文件安装 
 
 1，文件准备
 
@@ -35,7 +125,7 @@ urw-fonts is needed by grafana-6.1.4-1.x86_64
 yum install -y urw-fonts
 
 
-# 3 grafana 启动
+# 4 grafana 启动
 
 root用户下启动
 
@@ -49,7 +139,7 @@ sudo /bin/systemctl start grafana-server.service
 
 
 
-# 4 登录信息 
+# 5 登录信息 
 
 Grafana login 界面 登录
 
@@ -61,7 +151,7 @@ username: admin
 Password: `prom-operator,  prom$operatpr, admin, ivu$admin `
 
 
-# 5 Grafana-k8s部署
+# 6 Grafana-k8s部署
 
 Grafana提供了很多种部署方式，如果你的展示报警是在K8S集群外，可以二进制直接部署，如果grafana本身在集群内，或者管理端也是k8s集群，可以用yaml部署：
 

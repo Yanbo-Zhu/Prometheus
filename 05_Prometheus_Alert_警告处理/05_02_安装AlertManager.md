@@ -153,7 +153,134 @@ ExecStart=/usr/local/prometheus/alertmanager/alertmanager  --log.level=debug --
 ```
 
 
-# 2 关联Prometheus与Alertmanager
+# 2 DockerCompose 方式
+
+https://hty1024.com/archives/prometheus-jian-kong-fang-an-xue-xi-bi-ji--san-grafana-de-an-zhuang-he-pei-zhi
+
+
+1 目录准备
+```
+mkdir -pv /apps/alertmanager/{conf,template}
+```
+
+2 编辑 docker-compose.yml 文件
+```
+vim /apps/alertmanager/docker-compose.yml
+```
+
+```
+version: "3"
+	services:
+	  alertmanager:
+	    image: prom/alertmanager:v0.24.0
+	    container_name: prometheus-alertmanager
+	    hostname: alertmanager
+	    restart: always
+	    volumes:
+	      - /apps/alertmanager/template:/etc/alertmanager/template
+	      - /apps/alertmanager/conf/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+	    ports:
+	      - 9093:9093
+	networks:
+	  default:
+	    external:
+	      name: prometheus
+```
+
+
+3 编辑 alertmanager.yml 文件
+```
+vim /apps/alertmanager/conf/alertmanager.yml
+```
+
+```
+global:
+	  resolve_timeout: 5m
+	 
+	route:
+	  group_by: ['instance']
+	  group_wait: 30s
+	  group_interval: 30s
+	  repeat_interval: 1h
+	  receiver: 'dingtalk' 
+	  routes:
+	  - receiver: 'message'
+	    continue: true
+	    match:
+	      severity: emergency
+	  - receiver: 'dingtalk'
+	    continue: true
+	    match_re:
+	      severity: critical|warning
+	 
+	receivers: 
+	- name: 'dingtalk'
+	  webhook_configs:
+	  - url: 'http://127.0.0.1:9080/prometheusalert?type=dd&tpl=prometheus-dd-my&ddurl=https://oapi.dingtalk.com/robot/send?access_token=xxx'
+	- name: 'message'
+	  webhook_configs:
+	  - url: 'http://127.0.0.1:9080/prometheusalert?type=txdx&tpl=prometheus-dx-my&phone=xxx'
+	 
+	inhibit_rules:
+	  - source_match:
+	      severity: 'critical'
+	    target_match:
+	      severity: 'warning'
+	    equal: ['instance']
+```
+
+说明：
+
+- 配置文件中 `receivers` 配置实际的告警发送方式，此处使用了开源组件 `Prometheus Alert` 具体配置请参考官方文档
+- `Alertmanager` 官方文档：[https://prometheus.io/docs/alerting/latest/alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager)
+- `Prometheus Alert` 官方文档：[https://feiyu563.gitbook.io/prometheusalert](https://feiyu563.gitbook.io/prometheusalert)
+- `Alertmanager` 配置文件官方说明：[https://prometheus.io/docs/alerting/latest/configuration](https://prometheus.io/docs/alerting/latest/configuration)
+- `Alertmanager` 配置文件详解：[https://www.cnblogs.com/kebibuluan/p/14928490.html](https://www.cnblogs.com/kebibuluan/p/14928490.html)
+
+
+4 创建 docker 网段 prometheus
+检查是否存在 prometheus 网段：
+
+```
+docker network list
+```
+
+若不存在，则创建：
+```
+docker network create prometheus --subnet 10.21.22.0/24
+```
+
+
+5 启动 Alertmanager 容器
+```
+cd /apps/alertmanager
+docker-compose up -d
+```
+
+
+6 查看 Alertmanager 容器状态、查看  Alertmanager 容器日志
+```
+cd /apps/alertmanager
+docker-compose ps
+docker-compose logs -f
+```
+
+
+7 编辑 Prometheus Server 的 prometheus.yml 文件
+编辑 Prometheus 的 prometheus.yml 文件，在顶层结构中添加如下内容：
+```
+alerting:
+	  alertmanagers:
+	  - static_configs:
+	    - targets: ['localhost:9093']
+```
+
+8 
+重启 Prometheus Server
+重启 Prometheus Server 服务
+
+
+# 3 关联Prometheus与Alertmanager
 
 在Prometheus的架构中被划分成两个独立的部分。Prometheus负责产生告警，而Alertmanager负责告警产生后的后续处理。因此Alertmanager部署完成后，需要在Prometheus中设置Alertmanager相关的信息。
 

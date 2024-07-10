@@ -112,6 +112,9 @@ probe_success 1
 
 # 3 安装 blackbox_exporter
 
+
+## 3.1 二进制的方式安装
+
 - 项目地址 https://github.com/prometheus/blackbox_exporter
 
 ```yaml
@@ -152,6 +155,145 @@ WantedBy=multi-user.target
 ```
 
 
+## 3.2 DockerCompose方式
+
+1
+目录准备
+创建目录：
+
+```
+mkdir -pv /apps/exporter/blackbox-exporter/conf
+```
+
+
+2
+编辑 docker-compose.yml 文件
+```
+vim /apps/exporter/blackbox-exporter/docker-compose.yml
+
+version: "3"
+	services:
+	  blackbox-exporter:
+	    image: prom/blackbox-exporter:v0.22.0
+	    container_name: prometheus-blackbox-exporter
+	    hostname: blackbox-exporter
+	    restart: always
+	    ports:
+	      - 9115:9115
+	    volumes:
+	      - /apps/exporter/blackbox-exporter/conf:/config
+	    environment:
+	      - config.file=/config/blackbox.yml
+	networks:
+	  default:
+	    external:
+	      name: prometheus
+```
+
+
+3
+编辑 blackbox.yml 文件
+官方示例：https://github.com/prometheus/blackbox_exporter/blob/master/example.yml
+
+```
+vim /apps/exporter/blackbox-exporter/conf/blackbox.yml
+
+modules:
+	  http_2xx:
+	    prober: http
+	    timeout: 10s
+	  http_post_2xx:
+	    prober: http
+	    http:
+	      method: POST
+	  tcp_connect:
+	    prober: tcp
+	  pop3s_banner:
+	    prober: tcp
+	    tcp:
+	      query_response:
+	      - expect: "^+OK"
+	      tls: true
+	      tls_config:
+	        insecure_skip_verify: false
+	  grpc:
+	    prober: grpc
+	    grpc:
+	      tls: true
+	      preferred_ip_protocol: "ip4"
+	  grpc_plain:
+	    prober: grpc
+	    grpc:
+	      tls: false
+	      service: "service1"
+	  ssh_banner:
+	    prober: tcp
+	    tcp:
+	      query_response:
+	      - expect: "^SSH-2.0-"
+	      - send: "SSH-2.0-blackbox-ssh-check"
+	  irc_banner:
+	    prober: tcp
+	    tcp:
+	      query_response:
+	      - send: "NICK prober"
+	      - send: "USER prober prober prober :prober"
+	      - expect: "PING :([^ ]+)"
+	        send: "PONG ${1}"
+	      - expect: "^:[^ ]+ 001"
+	  icmp:
+	    prober: icmp
+	  icmp_ttl5:
+	    prober: icmp
+	    timeout: 5s
+	    icmp:
+	      ttl: 5
+```
+
+
+
+4
+配置 docker 网段 prometheus
+检查是否存在 prometheus 网段：
+```sh
+docker network list
+```
+
+若不存在，则创建：
+
+```sh
+docker network create prometheus --subnet 10.21.22.0/24
+```
+
+
+5 启动 blackbox-exporter 容器
+
+```sh
+cd /apps/exporter/blackbox-exporter
+```
+
+```sh
+docker-compose up -d
+```
+
+
+6  检查 blackbox-exporter 容器状态、查看 blackbox-exporter 容器日志
+
+```sh
+cd /apps/exporter/blackbox-exporter
+```
+
+```sh
+docker-compose ps
+```
+
+```sh
+docker-compose logs -f
+```
+
+
+
+
 
 # 4 访问页面
 
@@ -159,7 +301,7 @@ WantedBy=multi-user.target
 
 ![](image/image.webp)
 
-# 5 与Prometheus集成
+# 5 Blckbox_Exporter与Prometheus集成
 
 接下来，只需要在Prometheus下配置对Blockbox Exporter实例的采集任务即可。最直观的配置方式：
 
@@ -289,6 +431,47 @@ Blackbox Target实例
   - https://www.tencent.com
   - https://www.baidu.com 
 ```
+
+
+## 5.2 例子2
+
+https://hty1024.com/archives/prometheus-jian-kong-fang-an-xue-xi-bi-ji--jiu--shi-yong-prometheus-jin-xing-hei-he-jian-kong-blackboxexporter-de-an-zhuang-he-pei-zhi-
+
+1. 编辑 prometheus.yml 文件
+
+```yaml
+	scrape_configs:
+	  ## 探针
+	  - job_name: 'blackbox'
+	    metrics_path: /probe
+	    scrape_interval: 30s
+	    params:
+	      module: [http_2xx]
+	    static_configs:
+	      - targets:
+	        - 需要监控的URL1，如：https://hty1024.com
+	        - 需要监控的URL2，如：https://www.hty1024.com
+	    relabel_configs:
+	      - source_labels: [__address__]
+	        target_label: __param_target
+	      - source_labels: [__param_target]
+	        target_label: instance
+	      - target_label: __address__
+	        replacement: 127.0.0.1:9115
+```
+
+2. 重启 prometheus
+
+```sh
+cd /apps/prometheus
+```
+
+```sh
+docker-compose restart
+```
+
+3. 检查 blackbox-exporter 探针是否正常运行  
+    访问 Prometheus WebUI 的 targets 页面，检查 job 状态
 
 
 # 6 HTTP探针
@@ -475,7 +658,7 @@ probe_ip_protocol 6
       summary: node is {{ $labels.instance }}
 ```
 
-# 7 例子 监测kubernetes的集群node的ping的情况
+# 8 例子 监测kubernetes的集群node的ping的情况
 
 在blackbox的配置文件中配置icmp模块：
 ```
@@ -529,4 +712,16 @@ probe_ip_protocol 6
     annotations:
       summary: node is {{ $labels.instance }}
 ```
+
+
+# 9 配置 Grafana
+
+登录 Grafana，导入对应的看板即可。
+看板获取地址：https://grafana.com/grafana/dashboards/?dataSource=prometheus&search=Blackbox+Exporter
+
+注意： 看板导入后需要修改数据源的ID
+
+数据源查看方式： 在 Grafana 中进入 数据源详情 页面，浏览器 URL 的最后一段字符为该数据源的 ID。 如 URL 为 grafana/datasources/edit/6lbJpCb4z 时， 6lbJpCb4z 即为当前数据源的 ID
+数据源替换方式： 编辑看板，查看看板的 JSON 数据，替换 datasource 中的 uid
+
 

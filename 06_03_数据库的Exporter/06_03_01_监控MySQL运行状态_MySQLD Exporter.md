@@ -1,8 +1,16 @@
 
 MySQL是一个关系型数据库管理系统，由瑞典MySQL AB公司开发，目前属于Oracle旗下的产品。 MySQL是最流行的关系型数据库管理系统之一。数据库的稳定运行是保证业务可用性的关键因素之一。这一小节当中将介绍如何使用Prometheus提供的MySQLD Exporter实现对MySQL数据库性能以及资源利用率的监控和度量。
 
-# 1 部署MySQLD Exporter
+# 1 安装MySQLD Exporter
 
+1
+目录准备
+创建目录：
+mkdir -pv /apps/exporter/mysqld-exporter
+
+2 
+编辑 docker-compose.yml 文件
+vim /apps/exporter/mysqld-exporter/docker-compose.yml
 为了简化测试环境复杂度，这里使用Docker Compose定义并启动MySQL以及MySQLD Exporter：
 
 ```
@@ -23,11 +31,83 @@ services:
       - DATA_SOURCE_NAME=root:password@(mysql:3306)/database
 ```
 
+或者
+```
+version: "3"
+	services:
+	  mysqld-exporter:
+	    image: prom/mysqld-exporter:v0.14.0
+	    container_name: prometheus-mysqld-exporter
+	    hostname: mysqld-exporter
+	    restart: always
+	    ports:
+	      - 9104:9104
+	    environment:
+	      - DATA_SOURCE_NAME="user:password@(host:port)/database"
+	networks:
+	  default:
+	    external:
+	      name: prometheus
+```
+
+参数说明：
+
+    user ：数据库用户名
+    password ：数据库密码
+    host ：数据库主机
+    port ：数据库端口号
+    database ：数据库名，为空时则监控全部数据库
+
+
+
+
+3 配置 docker 网段 prometheus  
+检查是否存在 prometheus 网段：
+
+```sh
+docker network list
+```
+
+若不存在，则创建：
+
+```sh
+docker network create prometheus --subnet 10.21.22.0/24
+```
+
+4 启动 mysqld-exporter 容器
+
+```sh
+cd /apps/exporter/mysqld-exporter
+```
+
+```sh
+docker-compose up -d
+```
+
+
 这里通过环境变量DATA_SOURCE_NAME方式定义监控目标。使用Docker Compose启动测试用的MySQL实例以及MySQLD Exporter:
 ```
 $ docker-compose up -d
 ```
 
+
+5 
+检查 mysqld-exporter 容器状态、查看 mysqld-exporter 容器日志
+```sh
+cd /apps/exporter/mysqld-exporter
+```
+
+```sh
+docker-compose ps
+```
+
+```sh
+docker-compose logs -f
+```
+
+
+
+6 
 启动完成后，可以通过以下命令登录到MySQL容器当中，并执行MySQL相关的指令：
 ```
 $ docker exec -it <mysql_container_id> mysql -uroot -ppassword
@@ -45,6 +125,8 @@ mysql_up 1
 ```
 
 
+7 
+配置 prometheus（ 编辑 prometheus.yml 文件 ）
 修改Prometheus配置文件/etc/prometheus/prometheus.yml，增加对MySQLD Exporter实例的采集任务配置:
 ```
 - job_name: mysqld
@@ -59,6 +141,20 @@ mysql_up 1
 prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/data/prometheus
 ```
 
+通过 docker-compise的方式重启
+```sh
+cd /apps/prometheus
+```
+
+```sh
+docker-compose restart
+```
+
+
+- 检查 Mysqld Exporter 是否正常运行  
+    访问 Prometheus WebUI 的 targets 页面，检查 job 状态
+
+
 通过Prometheus的状态页，可以查看当前Target的状态：
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPSBn2UIikWwXuikSFl%252F-LPSBp0nlLAOwdBilRgv%252Fmysqld_exporter_target_stats.png%3Fgeneration%3D1540235680912627%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=b5b71850&sv=1)
@@ -68,8 +164,20 @@ MySQLD Exporter实例状态
 为了确保数据库的稳定运行，通常会关注一下四个与性能和资源利用率相关的指标：查询吞吐量、连接情况、缓冲池使用情况以及查询执行性能等。
 
 
+# 2 配置 Grafana 
 
-# 2 监控数据库吞吐量
+登录 Grafana，导入对应的看板即可。  
+看板获取地址：[https://grafana.com/grafana/dashboards/?dataSource=prometheus&search=MySQL](https://grafana.com/grafana/dashboards/?dataSource=prometheus&search=MySQL)
+
+注意： 看板导入后需要修改数据源的ID
+数据源查看方式： 在 Grafana 中进入 数据源详情 页面，浏览器 URL 的最后一段字符为该数据源的 ID。 如 URL 为 grafana/datasources/edit/6lbJpCb4z 时， 6lbJpCb4z 即为当前数据源的 ID
+数据源替换方式： 编辑看板，查看看板的 JSON 数据，替换 datasource 中的 uid
+
+
+
+
+
+# 3 监控数据库吞吐量
 
 对于数据库而言，最重要的工作就是实现对数据的增、删、改、查。为了衡量数据库服务器当前的吞吐量变化情况。在MySQL内部通过一个名为Questions的计数器，当客户端发送一个查询语句后，其值就会+1。可以通过以下MySQL指令查询Questions等服务器状态变量的值：
 
@@ -134,7 +242,7 @@ sum(rate(mysql_global_status_commands_total{command=~"insert|update|delete"}[2m]
 
 
 
-# 3 连接情况
+# 4 连接情况
 
 在MySQL中通过全局设置max_connections限制了当前服务器允许的最大客户端连接数量。一旦可用连接数被用尽，新的客户端连接都会被直接拒绝。 因此当监控MySQL运行状态时，需要时刻关注MySQL服务器的连接情况。用户可以通过以下指令查看当前MySQL服务的max_connections配置：
 
@@ -203,7 +311,7 @@ mysql_global_status_aborted_connects
 ```
 
 
-# 4 监控缓冲池使用情况
+# 5 监控缓冲池使用情况
 
 MySQL默认的存储引擎InnoDB使用了一片称为缓冲池的内存区域，用于缓存数据表以及索引的数据。 当缓冲池的资源使用超出限制后，可能会导致数据库性能的下降，同时很多查询命令会直接在磁盘中执行，导致磁盘I/O不断攀升。 因此，应该关注MySQL缓冲池的资源使用情况，并且在合理的时间扩大缓冲池的大小可以优化数据库的性能。
 
@@ -284,7 +392,7 @@ mysql_global_status_innodb_buffer_pool_reads 443
 rate(mysql_global_status_innodb_buffer_pool_reads[2m])
 ```
 
-# 5 查询性能
+# 6 查询性能
 
 MySQL还提供了一个Slow_queries的计数器，当查询的执行时间超过long_query_time的值后，计数器就会+1，其默认值为10秒，可以通过以下指令在MySQL中查询当前long_query_time的设置：
 

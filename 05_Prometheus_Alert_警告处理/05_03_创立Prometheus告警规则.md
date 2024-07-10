@@ -49,18 +49,6 @@ groups:
 
 ---
 
-
-为了能够让Prometheus能够启用定义的告警规则，我们需要在Prometheus全局配置文件中通过**rule_files**指定一组告警规则文件的访问路径，Prometheus启动后会自动扫描这些路径下规则文件中定义的内容，并且根据这些规则计算是否向外部发送通知：
-
-```
-rule_files:
-  [ - <filepath_glob> ... ]
-```
-
-
----
-
-
 默认情况下Prometheus会每分钟对这些告警规则进行计算，如果用户想定义自己的告警计算周期，则可以通过`evaluation_interval`来覆盖默认的计算周期：
 
 ```
@@ -69,7 +57,35 @@ global:
 ```
 
 
-# 3 模板化
+## 2.1 警告规则放在另一个文件下
+
+第一步： 编辑 Prometheus 的 prometheus.yml 文件，在 rule_files 中配置告警规则文件路径
+示例如下，若根据此示例配置，则 Prometheus 会将 /etc/prometheus/rules/ 目录下的全部 yaml 文件加载为告警规则：
+
+为了能够让Prometheus能够启用定义的告警规则，我们需要在Prometheus全局配置文件中通过**rule_files**指定一组告警规则文件的访问路径，Prometheus启动后会自动扫描这些路径下规则文件中定义的内容，并且根据这些规则计算是否向外部发送通知：
+
+```
+rule_files:
+  [ - <filepath_glob> ... ]
+
+rule_files:
+  - "/etc/prometheus/rules/*.yml" 
+```
+
+
+
+---
+
+
+
+# 3 警告规则模板化
+
+参考网站：
+
+    https://awesome-prometheus-alerts.grep.to
+    https://github.com/samber/awesome-prometheus-alerts
+
+
 
 一般来说，在告警规则文件的annotations中使用`summary`描述告警的概要信息，`description`用于描述告警的详细信息。同时Alertmanager的UI也会根据这两个标签值，显示告警信息。为了让告警信息具有更好的可读性，Prometheus支持模板化label和annotations的中标签的值。
 
@@ -223,7 +239,73 @@ Prometheus首次检测到满足触发条件后，hostCpuUsageAlert显示由一�
 
 
 
-# 7 例子 查看磁盘是否满了
+
+# 7 常用告警规则
+
+注意： 以下告警规则中的 type="xxx" 为自定义标签，使用时需要根据实际情况进行修改
+
+https://hty1024.com/archives/prometheus-jian-kong-fang-an-xue-xi-bi-ji--shi-yi-prometheus-chang-yong-gao-jing-gui-ze-zheng-li
+
+## 7.1 Prometheus Server
+
+```yaml
+groups:- name: Prometheus  rules:  - alert: Prometheus 连接失败    expr: up{type="prometheus"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: Prometheus ({{ $labels.instance }}) 连接失败      description: "Prometheus {{ $labels.instance }} 连接失败!"
+```
+
+## 7.2 黑盒监控
+
+```yaml
+groups:- name: Blackbox  rules:  - alert: Blackbox 连接失败    expr: probe_success == 0    for: 30s    labels:      severity: emergency    annotations:      summary: Blackbox ({{ $labels.instance }}) 连接失败      description: "Blackbox {{ $labels.instance }} 连接失败!"
+```
+
+## 7.3 Linux 主机（ Node ）
+
+```yaml
+groups:- name: Node  rules:  - alert: 主机连接失败    expr: up{type="node"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: 主机 ({{ $labels.instance }}) 连接失败      description: "主机 {{ $labels.instance }} 连接失败!"  - alert: 主机 CPU 负载过高    expr: sum by (instance) (avg by (mode, instance) (rate(node_cpu_seconds_total{mode!="idle"}[2m]))) > 0.8    for: 0m    labels:      severity: warning    annotations:      summary: 主机 ({{ $labels.instance }}) CPU 负载过高      description: "主机 {{ $labels.instance }} CPU 负载高于 80%!"  - alert: 主机内存不足    expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 20    for: 2m    labels:      severity: warning    annotations:      summary: 主机 ({{ $labels.instance }}) 内存不足      description: "主机 {{ $labels.instance }} 内存剩余不足20%!"  - alert: 主机磁盘不足    expr: (node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes < 20 and ON (instance, device, mountpoint) node_filesystem_readonly == 0    for: 2m    labels:      severity: warning    annotations:      summary: 主机 ({{ $labels.instance }}) 磁盘不足      description: "主机 {{ $labels.instance }} 磁盘剩余不足20%!"
+```
+
+## 7.4 Docker
+
+```yaml
+groups:- name: Docker  rules:  - alert: Docker 连接失败    expr: up{type="docker"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: Docker ({{ $labels.instance }}) 连接失败      description: "Docker {{ $labels.instance }} 连接失败!"
+```
+
+## 7.5 Mysql
+
+```yaml
+groups:- name: MySQL  rules:  - alert: MySQL 连接失败    expr: up{type="mysql"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: MySQL ({{ $labels.instance }}) 连接失败      description: "MySQL {{ $labels.instance }} 连接失败!"
+```
+
+## 7.6 MongoDB
+
+```yaml
+groups:- name: MongoDB  rules:  - alert: MongoDB 连接失败    expr: up{type="mongodb"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: MongoDB ({{ $labels.instance }}) 连接失败      description: "MongoDB {{ $labels.instance }} 连接失败!"
+```
+
+## 7.7 Redis
+
+```yaml
+groups:- name: Redis  rules:  - alert: Redis 连接失败    expr: up{type="redis"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: Redis ({{ $labels.instance }}) 连接失败      description: "Redis {{ $labels.instance }} 连接失败!"
+```
+
+## 7.8 RabbitMQ
+
+```yaml
+groups:- name: RabbitMQ  rules:  - alert: RabbitMQ 连接失败    expr: up{type="rabbitmq"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: RabbitMQ ({{ $labels.instance }}) 连接失败      description: "RabbitMQ {{ $labels.instance }} 连接失败!"
+```
+
+## 7.9 ElasticSearch
+
+```yaml
+groups:- name: ElasticSearch  rules:  - alert: ElasticSearch 连接失败    expr: up{type="elasticsearch"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: ElasticSearch ({{ $labels.instance }}) 连接失败      description: "ElasticSearch {{ $labels.instance }} 连接失败!"
+```
+
+## 7.10 Zookeeper
+
+```yaml
+groups:- name: Zookeeper  rules:  - alert: Zookeeper 连接失败    expr: up{type="zookeeper"} == 0    for: 30s    labels:      severity: emergency    annotations:      summary: Zookeeper ({{ $labels.instance }}) 连接失败      description: "Zookeeper {{ $labels.instance }} 连接失败!"
+```
+## 7.11 例子 查看磁盘是否满了
 
 为了能先走通流程，这里的报警规则先弄一个简单一点的。
 ```yaml

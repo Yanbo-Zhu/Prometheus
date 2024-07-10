@@ -1,7 +1,6 @@
 
 使用Node Exporter采集主机数据
 
-
 # 1 安装Node Exporter
 
 在Prometheus的架构设计中，Prometheus Server并不直接服务监控特定的目标，其主要任务负责数据的收集，存储并且对外提供数据查询支持。因此为了能够能够监控到某些东西，如主机的CPU使用率，我们需要使用到Exporter。Prometheus周期性的从Exporter暴露的HTTP服务地址（通常是/metrics）拉取监控样本数据。
@@ -25,8 +24,6 @@ tar -xzf node_exporter-0.15.2.darwin-amd64.tar.gz
 
 ## 1.2 Docker安装
 
-
-
 使用Docker运行，测试在Linux可以，在Mac不行：
 
 docker run --rm --net=host --pid=host -v "/:/host:ro,rslave" \
@@ -41,14 +38,137 @@ Darwin下测试用，也可以直接非host方式运行：
 docker run --rm -p 9100:9100 \
 
 
+## 1.3 Docker Compose 方式去安装 
 
-# 2 编译执行
+1
+目录准备
+创建目录
+```
+mkdir -pv /apps/exporter/node-exporter
+```
+
+
+2 编辑 docker-compose.yml 文件
+```
+vim /apps/exporter/node-exporter/docker-compose.yaml
+
+
+version: "3"
+	services:
+	  node-exporter:
+	    image: prom/node-exporter:v1.3.1
+	    container_name: prometheus-node-exporter
+	    hostname: node-exporter
+	    restart: always
+	    ports:
+	      - 9100:9100
+	networks:
+	  default:
+	    external: 
+	      name: prometheus
+
+```
+
+
+
+3 创建 docker 网段 prometheus
+
+```
+检查是否存在 prometheus 网段：
+docker network list
+
+若不存在，则创建：
+docker network create prometheus --subnet 10.21.22.0/24
+```
+
+
+
+# 2 启动 node_exporter的方式 
+
+## 2.1 docker的方式启动
+
+启动服务：
+docker run --rm -it -v `pwd`/prometheus.yml:/etc/prometheus/prometheus.yml \
+  -p 9090:9090 prom/prometheus
+
+
+## 2.2 直接启动
+
+运行node exporter:
+
+```
+cd node_exporter-0.15.2.darwin-amd64
+cp node_exporter-0.15.2.darwin-amd64/node_exporter /usr/local/bin/
+node_exporter
+```
+
+
+启动 node_exporter的方式2
+root用户下启动
+输入:
+```bash
+nohup ./consul_exporter   >/dev/null   2>&1 &
+```
+
+
+
+启动成功后，可以看到以下输出：
+
+```
+INFO[0000] Listening on :9100                            source="node_exporter.go:76"
+```
+
+访问[http://localhost:9100/](http://localhost:9100/)可以看到以下页面：
+
+![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPMFlGDFIX7wuLhSHx9%252F-LPMFp6oc_SZOU4__NeX%252Fnode_exporter_home_page.png%3Fgeneration%3D1540136067584405%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=c5432eb&sv=1)
+
+
+```
+[root@node00 node_exporter]# ./node_exporter 
+INFO[0000] Starting node_exporter (version=0.18.1, branch=HEAD, revision=3db77732e925c08f675d7404a8c46466b2ece83e)  source="node_exporter.go:156"
+INFO[0000] Build context (go=go1.12.5, user=root@b50852a1acba, date=20190604-16:41:18)  source="node_exporter.go:157"
+INFO[0000] Enabled collectors:                           source="node_exporter.go:97"
+# 中间输出省略
+INFO[0000] Listening on :9100                            source="node_exporter.go:170"
+
+复制代码
+```
+
+
+## 2.3 docker-compose的方式去启动
+
+4 
+运行 node-exporter 容器
+```
+cd /apps/exporter/node-exporter
+docker-compose up -d
+```
+
+
+5 检查  node-exporter 容器状态、查看  node-exporter 容器日志
+```
+cd /apps/exporter/node-exporter
+docker-compose ps
+docker-compose logs -f
+```
+
+
+6 重启 prometheus
+cd /apps/prometheus
+docker-compose restart
+检查 node-exporter 数据是否正常上报
+访问 Prometheus WebUI 的 targets 页面，检查 job 的状态
+
+
+
+
+# 3 编译执行
 
 make
 ./node_exporter
 
 
-# 7 测试node_exporter
+# 4 测试node_exporter
 
 ```
 [root@node00 ~]# curl 127.0.0.1:9100/metrics<br># 这里可以看到node_exporter暴露出来的数据。
@@ -56,7 +176,7 @@ make
 
 
 
-# 8 配置node_exporter开机自启
+# 5 配置node_exporter开机自启
 
 
 ```
@@ -102,7 +222,10 @@ Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" le
 
 
 
-# 3 Prometheus配置文件prometheus.yml
+# 6 Prometheus配置文件prometheus.yml
+
+编辑 prometheus.yml 文件
+
 
 ```yaml
 scrape_configs:
@@ -135,58 +258,11 @@ scrape_configs:
 [root@node00 prometheus]# systemctl restart prometheus 
 [root@node00 prometheus]# systemctl status prometheus
 ```
-# 4 启动 node_exporter的方式 
-
-## 4.1 docker的方式启动
-
-启动服务：
-docker run --rm -it -v `pwd`/prometheus.yml:/etc/prometheus/prometheus.yml \
-  -p 9090:9090 prom/prometheus
-
-
-## 4.2 直接启动
-
-运行node exporter:
-
-```
-cd node_exporter-0.15.2.darwin-amd64
-cp node_exporter-0.15.2.darwin-amd64/node_exporter /usr/local/bin/
-node_exporter
-```
-
-
-启动 node_exporter的方式2
-root用户下启动
-输入:
-```bash
-nohup ./consul_exporter   >/dev/null   2>&1 &
-```
 
 
 
-启动成功后，可以看到以下输出：
 
-```
-INFO[0000] Listening on :9100                            source="node_exporter.go:76"
-```
-
-访问[http://localhost:9100/](http://localhost:9100/)可以看到以下页面：
-
-![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LPMFlGDFIX7wuLhSHx9%252F-LPMFp6oc_SZOU4__NeX%252Fnode_exporter_home_page.png%3Fgeneration%3D1540136067584405%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=c5432eb&sv=1)
-
-
-```
-[root@node00 node_exporter]# ./node_exporter 
-INFO[0000] Starting node_exporter (version=0.18.1, branch=HEAD, revision=3db77732e925c08f675d7404a8c46466b2ece83e)  source="node_exporter.go:156"
-INFO[0000] Build context (go=go1.12.5, user=root@b50852a1acba, date=20190604-16:41:18)  source="node_exporter.go:157"
-INFO[0000] Enabled collectors:                           source="node_exporter.go:97"
-# 中间输出省略
-INFO[0000] Listening on :9100                            source="node_exporter.go:170"
-
-复制代码
-```
-
-# 5 初始Node Exporter监控指标
+# 7 初始Node Exporter监控指标
 
 访问[http://localhost:9100/metrics](http://localhost:9100/metrics)，可以看到当前node exporter获取到的当前主机的所有监控数据，如下所示：
 
@@ -221,7 +297,7 @@ node_load1 3.0703125
 - process_*：node exporter自身进程相关运行指标
 
 
-# 6 从Node Exporter收集监控数据
+# 8 从Node Exporter收集监控数据
 
 为了能够让Prometheus Server能够从当前node exporter获取到监控数据，这里需要修改Prometheus配置文件。编辑prometheus.yml并在scrape_configs节点下添加以下内容:
 
@@ -252,4 +328,16 @@ up{instance="localhost:9100",job="node"}    1
 ```
 
 其中“1”表示正常，反之“0”则为异常。
+
+
+# 9 配置 Grafana 看板
+
+登录 Grafana，导入对应的看板即可。
+看板获取地址：https://grafana.com/grafana/dashboards/?dataSource=prometheus&collector=nodeexporter
+
+注意： 看板导入后需要修改数据源的ID
+
+数据源查看方式： 在 Grafana 中进入 数据源详情 页面，浏览器 URL 的最后一段字符为该数据源的 ID。 如 URL 为 grafana/datasources/edit/6lbJpCb4z 时， 6lbJpCb4z 即为当前数据源的 ID
+
+数据源替换方式： 编辑看板，查看看板的 JSON 数据，替换 datasource 中的 uid
 
