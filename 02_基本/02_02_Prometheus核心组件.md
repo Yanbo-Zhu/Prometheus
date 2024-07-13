@@ -51,6 +51,13 @@ Prometheus Server内置的Express Browser UI，通过这个UI可以直接通过P
 
 Prometheus Server的联邦集群能力可以使其从其他的Prometheus Server实例中获取数据，因此在大规模监控的情况下，可以通过联邦集群以及功能分区的方式对Prometheus Server进行扩展。
 
+![](image/Pasted%20image%2020240713131859.png)
+
+
+
+
+
+
 
 # 3 Exporters
 
@@ -91,6 +98,11 @@ Prometheus Pushgateway 是 Prometheus 生态系统中的一个组件，它允许
 适用场景和限制
 推送指标到 Pushgateway 非常适合于批处理作业或一些临时的工作，这些任务一旦完成他们就不再存在，因此无法通过 Prometheus 常规的拉取模式进行抓取。然而，使用 Pushgateway 并不适合作为长期运行工作的常规指标推送手段，并且 Pushgateway 也不支持删除已推送指标的自动过期和清理，这需要用户自己管理。
 不过，建议尽量避免过度依赖 Pushgateway，因为过多地使用它可能会增加系统的复杂性并对 Pushgateway 产生较大压力，从而影响 Prometheus 执行监控的性能。只有当 Prometheus 的主动拉取模式不适用时，才考虑使用 Pushgateway。
+
+
+![](image/Pasted%20image%2020240713133451.png)
+
+
 
 
 # 6 Service Discovery
