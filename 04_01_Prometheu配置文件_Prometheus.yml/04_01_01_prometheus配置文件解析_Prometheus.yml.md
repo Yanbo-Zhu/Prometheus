@@ -116,7 +116,19 @@ scrape_configs:
 ```
 
 
+
+
+
+
+
+
+
+
 # 2 global片段主要参数
+
+How often Prometheus will scrape its targets
+Rules for aggregating metric values or creating alerts when condition met 
+What resources Prometheus monitors 
 
 ```
   # How frequently to scrape targets by default.
@@ -134,8 +146,13 @@ scrape_configs:
     [ <labelname>: <labelvalue> ... ]
 ```
 
+![](image/Pasted%20image%2020240713133739.png)
+
 
 # 3 scrapy_config片段主要参数
+
+Define your own jobs 
+Default values for each job 
 
 ```
 一个scrape_config 片段指定一组目标和参数， 目标就是实例，指定采集的端点， 参数描述如何采集这些实例， 主要参数如下
@@ -150,6 +167,14 @@ scrape_configs:
 - static_configs: 静态指定服务job。
 - relabel_config: relabel设置。
 ```
+
+
+![](image/Pasted%20image%2020240713134001.png)
+
+
+
+
+
 
 
 ## 3.1 static_configs样例

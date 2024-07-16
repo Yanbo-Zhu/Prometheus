@@ -5,6 +5,12 @@
 
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVMF4RtPS-2rjW9R-hG%252F-LPS9QhUbi37E1ZK8mXF%252Fprometheus-alert-artich.png%3Fgeneration%3D1546578333144123%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=57fb9de5&sv=1)
 
+
+
+
+
+
+
 Prometheus告警处理
 
 在Prometheus中一条告警规则主要由以下几部分组成：

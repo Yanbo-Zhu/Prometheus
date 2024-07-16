@@ -17,12 +17,15 @@ node_cpu{cpu="cpu0",mode="idle"} 362812.7890625
 # 1 四种数据类型
 
 - gauge 当前值, 递增的计数器
+    - What is the current value of x now 
     - 适合：API 接口请求次数，重试次数。
     - node_memory_MemFree_bytes
 - counter 计数器是代表一个累积指标单调递增计数器，其价值只能在重新启动增加或归零。例如，您可以使用计数器来表示已服务请求，已完成任务或错误的数量。
+    -  How many times x happened
     - 适合：cpu变化，类似波浪线不均匀。
     - http_request_total
 - histogram 直方图样本观测（通常之类的东西请求持续时间或响应大小）和计数它们配置的桶中。它还提供所有观察值的总和
+    - how long or how big 
     - 适合：将web 一段时间进行分组，根据标签度量名称，统计这段时间这个度量名称有多少条。
     - 适合：某个时间对某个度量值，分组，一段时间http相应大小，请求耗时的时间。
 ```
