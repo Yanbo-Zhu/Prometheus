@@ -8,4 +8,4 @@
 那假如我们想自己设计一些 API 对象来完成需求呢？Kubernetes 本身提供了 CRD(Custom Resource Definition)，允许我们定义新的 API 对象。但在定义完之后，Kubernetes 本身当然不可能知道这些 API 对象的期望状态该如何到达。这时，我们就要写对应的 Controller 去实现这个逻辑。而这种自定义 API 对象 + 自己写 Controller 去解决问题的模式，就是 Operator Pattern。
 
 
-
+什么
