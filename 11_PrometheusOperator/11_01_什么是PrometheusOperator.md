@@ -33,7 +33,11 @@ Prometheus的本职就是一组用户自定义的CRD资源以及Controller的实
 
 > 简言之，Prometheus Operator能够帮助用户自动化的创建以及管理Prometheus Server以及其相应的配置。
 
-# 3 在Kubernetes集群中部署Prometheus Operator
+
+# 3 在Kubernetes集群中安装Prometheus Operator
+
+
+## 3.1 使用 code 
 
 在Kubernetes中安装Prometheus Operator非常简单，用户可以从以下地址中过去Prometheus Operator的源码：
 ```
@@ -59,10 +63,7 @@ serviceaccount/prometheus-operator created
 service/prometheus-operator created
 ```
 
-
-
 Prometheus Operator通过Deployment的形式进行部署，为了能够让Prometheus Operator能够监听和管理Kubernetes资源同时也创建了单独的ServiceAccount以及相关的授权动作。
-
 
 查看Prometheus Operator部署状态，以确保已正常运行：
 ```
@@ -73,6 +74,9 @@ prometheus-operator-6db8dbb7dd-2hz55   1/1       Running   0          19s
 
 
 
+## 3.2 使用 Helm-Chart
+
+![](image/Pasted%20image%2020240712124406.png)
 
 
 

@@ -107,15 +107,24 @@ docker-compose logs -f
 
 # 3 通过二进制文件安装 
 
-1，文件准备
+
+- 下载地址：[grafana.com/grafana/dow…](https://link.juejin.cn?target=https%3A%2F%2Fgrafana.com%2Fgrafana%2Fdownload%3Fplatform%3Dwindows "https://grafana.com/grafana/download?platform=windows")
+- 下载**grafana-9.0.6.windows-amd64.zip**安装包即可，并解压到**F:\softwarea\grafana\grafana-9.0.6**
+- 进入 **bin** 目录，双击**grafana-server.exe**启动
+- 启动成功之后，[http://localhost:3000](https://link.juejin.cn?target=http%3A%2F%2Flocalhost%3A3000 "http://localhost:3000")
+- 初始登录账户：**admin/admin**
+
+![截图.png](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/50b05b327a894ce0944cbbb0761ee74b~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp?)  
+
+
+1文件准备
 
 将下载下来的grafana-7.1.1-1.x86_64.rpm的文件通过apm方式安装
 输入:
 
  rpm -ivh grafana-7.1.1-1.x86_64.rpm
 
-进行安装
-
+2 进行安装
 
 如果出现如下错误:
 error: Failed dependencies:
