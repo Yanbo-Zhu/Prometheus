@@ -4,7 +4,177 @@
 3. 关联Promethues与ServiceMonitor
 4. 创建 自定义ServiceAccount
 
-# 1 创建Prometheus实例
+> The Prometheus Operator includes a Custom Resource Definition that allows the definition of the ServiceMonitor. The ServiceMonitor is used to define an application you wish to scrape metrics from within Kubernetes, the controller will action the ServiceMonitors we define and automatically build the required Prometheus configuration.
+
+==Within the ServiceMonitor we specify the Kubernetes Labels that the Operator can use to identify the Kubernetes Service which in turn then identifies the Pods, that we wish to monitor. Lets look at how we can use Prometheus to scrape metrics from its own inbuilt metrics endpoint.==
+
+
+
+# 1 例子2
+
+
+## 1.1 确定哪个service我们要去monitor_以及这个service有那些label
+
+Using kubectl describe, we can view the Labels on the prometheus-operated service that the Prometheus Operator previously created. If you wish to see this execute `kubectl describe service prometheus-operated --namespace prometheus `in your terminal or see the example below:
+
+```
+$kubectl describe service prometheus-operated --namespace prometheus
+Name:              prometheus-operated
+Namespace:         prometheus
+Labels:            operated-prometheus=true
+Annotations:       <none>
+Selector:          app=prometheus
+Type:              ClusterIP
+IP:                None
+Port:              web  9090/TCP
+TargetPort:        web/TCP
+Endpoints:         10.8.3.7:9090
+Session Affinity:  None
+Events:            <none>
+
+```
+
+
+
+## 1.2 创造一个 ServiceMonitor去追踪某个Service 
+
+这个service是贴有某个特定的label的, 
+ServiceMonitor中给出要去追踪具有那些label的Service
+
+Now we know this Kubernetes Service has the Label operated-prometheus=true we can create a ServiceMonitor to target this Service. Create a file called servicemonitor.yaml and include the following:
+
+```
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    serviceMonitorSelector: prometheus
+  name: prometheus
+  namespace: prometheus
+spec:
+  endpoints:
+  - interval: 30s
+    targetPort: 9090
+    path: /metrics
+  namespaceSelector:   # 重要
+    matchNames:
+    - prometheus
+  selector:   # 重要 
+    matchLabels:
+      operated-prometheus: "true"
+```
+
+
+This Kubernetes Resource uses the **monitoring.coreos.com/v1** API Version that was installed into Kubernetes by the Prometheus Operator, as explained previously. It uses the **namespaceSelector** to specify the Kubernetes Namespace in which we wish to locate the Service, in this example above we are selecting within the **prometheus** namespace. It then uses the **selector** to specify that it must match the Label **operated-prometheus** being set as **“true”**.
+
+Under the **endpoints** key we must specify one or more scrape targets for the target service. In this example it will scrape each Pod it selects on TCP port **9090** on the URL **/metrics** every **30 seconds**.
+
+Now apply this YAML to the cluster by executing `kubectl apply -f servicemonitor.yaml`. 
+
+
+You can then validate this has been created by execute `kubectl get servicemonitor --namespace prometheus`:
+```
+$kubectl get servicemonitor
+NAME                           AGE
+prometheus                     1m
+```
+
+
+## 1.3 关联新创造的ServiceMonitor和Prometheus Server
+
+这样 Prometheus Server 才能知道，用户新创造了一个ServiceMonitor , 需要去监控 
+
+Before Prometheus Operator will automatically update the running Prometheus instance configuration to set it to scrape metrics from itself, there is one more thing we must do. On the **ServiceMonitor** we defined a label on the resource called **serviceMonitorSelector**, as shown below:
+
+```
+metadata:
+  labels:
+    serviceMonitorSelector: prometheus
+```
+
+
+
+需要去更新 Prometheus Resource configuration
+You now need to update the Prometheus Resource configuration to instruct the Prometheus Operator to configure the Prometheus instance using all ServiceMonitors that have the serviceMonitorSelector Label set as prometheus.
+Update the previous YAML file you created called prometheus.yaml and add the serviceMonitorSelector key to the Prometheus resource:
+```
+  serviceMonitorSelector:
+    matchLabels:
+      serviceMonitorSelector: prometheus
+```
+
+
+
+The updated Prometheus resource should look similar to the example below:
+```
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: prometheus
+spec:
+  baseImage: quay.io/prometheus/prometheus
+  logLevel: info
+  podMetadata:
+    annotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    labels:
+      app: prometheus
+  replicas: 1
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 1
+      memory: 2Gi
+  retention: 12h
+  serviceAccountName: prometheus-service-account
+  serviceMonitorSelector:   # 注意看这里
+    matchLabels:
+      serviceMonitorSelector: prometheus
+  storage:
+    volumeClaimTemplate:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: prometheus-pvc
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+  version: v2.10.0
+```
+
+Now apply this change to the Kubernetes cluster by running `kubectl apply -f prometheus.yaml`.
+
+After a few moment the Prometheus Operator will automatically update the Prometheus instance you created with the Target configuration to scrape the Prometheus metrics endpoint on the Pod. 
+![](image/targets.png)
+
+If you now select **Graph** at the top, the **Expression** search box will now auto-complete when you start typing. Go ahead and type ‘prometheus’ and you will see some metric names appear. If you select one and click **Execute** it will query for that metric. Here is an example for **prometheus_build_info**:
+
+[![Prometheus Graph](https://observability.thomasriley.co.uk/prometheus/configuring-prometheus/using-service-monitors/images/graph.png?classes=shadow&width=55pc)](https://observability.thomasriley.co.uk/prometheus/configuring-prometheus/using-service-monitors/images/graph.png?classes=shadow&width=55pc)
+
+You have now successfully configured Prometheus using the ServiceMonitor. Going forward when adding more services to Kubernetes that require Prometheus monitoring, the ServiceMonitor can be used to configure Prometheus as has been demonstrated.
+
+
+
+## 1.4 查看结果 
+
+看看 目标的 pod 是否监控上了 
+
+After a minute or two, check the [Prometheus Configuration](http://localhost:9090/config) again, you will see the scrape config appear under the **scrape_configs** key.
+In the Prometheus UI if you select Status > Targets (or go here) you will see details of the target Prometheus has identified, which is the single instance of Prometheus you launched:
+
+
+
+
+
+# 2 例子1
+
+## 2.1 创建Prometheus实例
 
 > 利用Prometheus Operator 声明式 创建一个 Prometheus Server实例
 
@@ -37,6 +207,7 @@ NAME              DESIRED   CURRENT   AGE
 prometheus-inst   1         1         1m
 ```
 
+
 查看Pod实例：
 
 ```
@@ -57,12 +228,10 @@ $ kubectl -n monitoring port-forward statefulsets/prometheus-inst 9090:9090
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LTqt7j2IAOToEk6hOsn%252F-LTqt9HdKEQc3urcy9NC%252Foperator-01.png%3Fgeneration%3D1544961698123185%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=979fa1fb&sv=1)
 
 
+## 2.2 创建Service 和 Depolyment(Pod)
 
-# 2 使用ServiceMonitor管理监控配置
+> This means the applications and services must expose a HTTP(S) endpoint containing Prometheus formatted metrics. Prometheus will then, as per its configuration, periodically scrape metrics from these HTTP(S) endpoints.
 
-> 利用Prometheus Operator 声明式 创建一个 ServiceMonitor的对象
-
-修改监控配置项也是Prometheus下常用的运维操作之一，为了能够自动化的管理Prometheus的配置，Prometheus Operator使用了自定义资源类型ServiceMonitor来描述监控对象的信息。
 
 这里我们首先在集群中部署一个示例应用，将以下内容保存到example-app.yaml，并使用kubectl命令行工具创建：
 
@@ -96,7 +265,7 @@ spec:
       - name: example-app
         image: fabxc/instrumented_app
         ports:
-        - name: web
+        - name: web   
           containerPort: 8080
 ```
 
@@ -126,6 +295,16 @@ codelab_api_http_requests_in_progress 3
 codelab_api_request_duration_seconds_bucket{method="GET",path="/api/bar",status="200",le="0.0001"} 0
 ```
 
+
+## 2.3 使用ServiceMonitor管理监控配置
+
+> 利用Prometheus Operator 声明式 创建一个 ServiceMonitor的对象
+
+
+修改监控配置项也是Prometheus下常用的运维操作之一，为了能够自动化的管理Prometheus的配置，Prometheus Operator使用了自定义资源类型ServiceMonitor来描述监控对象的信息。
+
+
+
 为了能够让Prometheus能够采集部署在Kubernetes下应用的监控数据，在原生的Prometheus配置方式中，我们在Prometheus配置文件中定义单独的Job，同时使用kubernetes_sd定义整个服务发现过程。
 
 
@@ -149,20 +328,27 @@ spec:
   - port: web
 ```
 
-通过定义selector中的标签定义选择监控目标的Pod对象，同时在endpoints中指定port名称为web的端口。默认情况下ServiceMonitor和监控对象必须是在相同Namespace下的。在本示例中由于Prometheus是部署在Monitoring命名空间下，因此为了能够关联default命名空间下的example对象，需要使用namespaceSelector定义让其可以跨命名空间关联ServiceMonitor资源。保存以上内容到example-app-service-monitor.yaml文件中，并通过kubectl创建：
+==通过定义selector中的标签定义选择监控目标的Pod对象==，同时在endpoints中指定port名称为web的端口 (这个是通过 上面 定义某个 Service 资源的时候 就已经声明好的)。
+默认情况下ServiceMonitor和监控对象必须是在相同Namespace下的。在本示例中由于Prometheus是部署在Monitoring命名空间下，因此为了能够关联default命名空间下的example对象，需要使用namespaceSelector定义让其可以跨命名空间关联ServiceMonitor资源。
 
+保存以上内容到example-app-service-monitor.yaml文件中，并通过kubectl创建：
 ```
 $ kubectl create -f example-app-service-monitor.yaml
 servicemonitor.monitoring.coreos.com/example-app created
 ```
 
-如果希望ServiceMonitor可以关联任意命名空间下的标签，则通过以下方式定义：
+---
 
+如果希望ServiceMonitor可以关联任意命名空间下的标签，则通过以下方式定义：
 ```
 spec:
   namespaceSelector:
     any: true
 ```
+
+
+---
+
 
 如果监控的Target对象启用了BasicAuth认证，那在定义ServiceMonitor对象时，可以使用endpoints配置中定义basicAuth如下所示：
 
@@ -192,6 +378,7 @@ spec:
     port: web
 ```
 
+
 其中basicAuth中关联了名为basic-auth的Secret对象，用户需要手动将认证信息保存到Secret中:
 
 ```
@@ -206,7 +393,7 @@ type: Opaque
 ```
 
 
-# 3 关联Promethues与ServiceMonitor
+## 2.4 关联Promethues与ServiceMonitor
 
 Prometheus与ServiceMonitor之间的关联关系使用serviceMonitorSelector定义，在Prometheus中通过标签选择当前需要监控的ServiceMonitor对象。修改prometheus-inst.yaml中Prometheus的定义如下所示： 
 为了能够让Prometheus关联到ServiceMonitor，需要在Pormtheus定义中使用serviceMonitorSelector，我们可以通过标签选择当前Prometheus需要监控的ServiceMonitor对象。
@@ -253,7 +440,7 @@ alerting:
 rule_files:
 - /etc/prometheus/rules/prometheus-inst-rulefiles-0/*.yaml
 scrape_configs:
-- job_name: monitoring/example-app/0
+- job_name: monitoring/example-app/0   # 注意这里
   scrape_interval: 30s
   scrape_timeout: 10s
   metrics_path: /metrics
@@ -324,11 +511,11 @@ level=error ts=2018-12-15T12:52:48.452108433Z caller=main.go:240 component=k8s_c
 ```
 
 
-# 4 创建 自定义ServiceAccount
+## 2.5 创建 自定义ServiceAccount
 
 由于默认创建的Prometheus实例使用的是monitoring命名空间下的default账号，该账号并没有权限能够获取default命名空间下的任何资源信息。
 
-为了修复这个问题，我们需要在Monitoring命名空间下为创建一个名为Prometheus的ServiceAccount，并且为该账号赋予相应的集群访问权限。
+为了修复这个问题，我们需要在Monitoring命名空间下为创建一个名为Prometheus的ServiceAccount，并且为该ServiceAccount账号赋予相应的集群访问权限。
 
 ```
 apiVersion: v1
@@ -361,11 +548,11 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: prometheus
-roleRef:
+roleRef:   # 这个是上面 定义的 ClusterRole
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: prometheus
-subjects:
+subjects:  # 这个是上面 定义的 ServiceAccount
 - kind: ServiceAccount
   name: prometheus
   namespace: monitoring

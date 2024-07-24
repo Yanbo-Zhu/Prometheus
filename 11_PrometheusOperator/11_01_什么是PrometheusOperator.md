@@ -9,7 +9,7 @@
 
 从概念上来讲Operator就是针对管理特定应用程序的，在Kubernetes基本的Resource和Controller的概念上，以扩展Kubernetes api的形式。帮助用户创建，配置和管理复杂的有状态应用程序。从而实现特定应用程序的常见操作以及运维自动化。
 
-在Kubernetes中我们使用Deployment、DamenSet，StatefulSet来管理应用Workload，使用Service，Ingress来管理应用的访问方式，使用ConfigMap和Secret来管理应用配置。我们在集群中对这些资源的创建，更新，删除的动作都会被转换为事件(Event)，Kubernetes的Controller Manager负责监听这些事件并触发相应的任务来满足用户的期望。这种方式我们成为声明式，用户只需要关心应用程序的最终状态，其它的都通过Kubernetes来帮助我们完成，通过这种方式可以大大简化应用的配置管理复杂度。
+==在Kubernetes中我们使用Deployment、DamenSet，StatefulSet来管理应用Workload，使用Service，Ingress来管理应用的访问方式，使用ConfigMap和Secret来管理应用配置。我们在集群中对这些资源的创建，更新，删除的动作都会被转换为事件(Event)，Kubernetes的Controller Manager负责监听这些事件并触发相应的任务来满足用户的期望。这种方式我们成为声明式，用户只需要关心应用程序的最终状态，其它的都通过Kubernetes来帮助我们完成，通过这种方式可以大大简化应用的配置管理复杂度。==
 
 而除了这些原生的Resource资源以外，Kubernetes还允许用户添加自己的自定义资源(Custom Resource)。并且通过实现自定义Controller来实现对Kubernetes的扩展。
 
@@ -76,12 +76,119 @@ prometheus-operator-6db8dbb7dd-2hz55   1/1       Running   0          19s
 
 ## 3.2 使用 Helm-Chart
 
+https://observability.thomasriley.co.uk/prometheus/deploying-prometheus/deploying-prometheus-operator/
+
 ![](image/Pasted%20image%2020240712124406.png)
 
 
+First we will use the community maintained [Helm chart](https://github.com/helm/charts/tree/master/stable/prometheus-operator) for deploying Prometheus Operator to Kubernetes. By default, the Helm chart will also deploy and configure an instance of Prometheus however to begin with lets deploy a standalone instance of the Operator.
+
+
+1  values.yaml
+Lets modify the default behavior of the Helm chart. Create a file called **values.yaml** containing the following:
+
+```
+defaultRules:
+  create: false
+alertmanager:
+  enabled: false
+grafana:
+  enabled: false
+kubeApiServer:
+  enabled: false
+kubelet:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+coreDns:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeStateMetrics:
+  enabled: false
+nodeExporter:
+  enabled: false
+prometheus:
+  enabled: false
+```
 
 
 
+2 install 
+
+Then install the Prometheus Operator via Helm using the **helm upgrade** command as shown below:
+
+```shell
+helm upgrade --install prometheus-operator stable/prometheus-operator --namespace prometheus --values values.yaml
+```
+
+When this executes, Helm will display all of the resources it has successfully created in Kubernetes:
+
+```shell
+$ helm upgrade --install prometheus-operator stable/prometheus-operator --namespace prometheus --values values.yaml
+
+Release "prometheus-operator" does not exist. Installing it now.
+NAME:   prometheus-operator
+LAST DEPLOYED: Tue Jun 25 22:06:52 2019
+NAMESPACE: prometheus
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/ClusterRole
+NAME                              AGE
+prometheus-operator-operator      1s
+prometheus-operator-operator-psp  1s
+
+==> v1/ClusterRoleBinding
+NAME                              AGE
+prometheus-operator-operator      1s
+prometheus-operator-operator-psp  1s
+
+==> v1/Deployment
+NAME                          READY  UP-TO-DATE  AVAILABLE  AGE
+prometheus-operator-operator  0/1    1           0          1s
+
+==> v1/Pod(related)
+NAME                                           READY  STATUS             RESTARTS  AGE
+prometheus-operator-operator-694f88774b-q4r64  0/1    ContainerCreating  0         1s
+
+==> v1/Service
+NAME                          TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)   AGE
+prometheus-operator-operator  ClusterIP  10.11.250.245  <none>       8080/TCP  1s
+
+==> v1/ServiceAccount
+NAME                          SECRETS  AGE
+prometheus-operator-operator  1        1s
+
+==> v1/ServiceMonitor
+NAME                          AGE
+prometheus-operator-operator  1s
+
+==> v1beta1/PodSecurityPolicy
+NAME                          PRIV   CAPS      SELINUX   RUNASUSER  FSGROUP    SUPGROUP  READONLYROOTFS  VOLUMES
+prometheus-operator-operator  false  RunAsAny  RunAsAny  MustRunAs  MustRunAs  false     configMap,emptyDir,projected,secret,downwardAPI,persistentVolumeClaim
 
 
+NOTES:
+The Prometheus Operator has been installed. Check its status by running:
+  kubectl --namespace prometheus get pods -l "release=prometheus-operator"
+
+Visit https://github.com/coreos/prometheus-operator for instructions on how
+to create & configure Alertmanager and Prometheus instances using the Operator.
+
+```
+
+Above you can see that Helm has deployed the **stable/prometheus-operator** Helm chart under the release name **prometheus-operator** into the Kubernetes namespace **prometheus** using the Helm values we created above in values.yaml.
+
+
+3 检查安装成果
+If you then use Kubectl to list the Pods in the **prometheus** namespace you will see the Prometheus Operator is now installed:
+
+```shell
+$ kubectl get pods -n prometheus
+NAME                                            READY   STATUS    RESTARTS   AGE
+prometheus-operator-operator-694f88774b-q4r64   1/1     Running   0          6m47s
+```
 
