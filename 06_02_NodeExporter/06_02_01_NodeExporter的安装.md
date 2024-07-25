@@ -1,6 +1,12 @@
 
 使用Node Exporter采集主机数据
 
+The Node Exporter is a Prometheus Exporter developed by the Prometheus project. It is not specific to Kubernetes and is designed to expose hardware and OS metrics from *NIX based Kernels. The project can be found [here](https://github.com/prometheus/node_exporter) on GitHub.
+
+We will look at using the Node Exporter to expose metrics for each node running in a Kubernetes cluster.
+
+
+
 # 1 安装Node Exporter
 
 在Prometheus的架构设计中，Prometheus Server并不直接服务监控特定的目标，其主要任务负责数据的收集，存储并且对外提供数据查询支持。因此为了能够能够监控到某些东西，如主机的CPU使用率，我们需要使用到Exporter。Prometheus周期性的从Exporter暴露的HTTP服务地址（通常是/metrics）拉取监控样本数据。
@@ -80,6 +86,126 @@ docker network list
 若不存在，则创建：
 docker network create prometheus --subnet 10.21.22.0/24
 ```
+
+
+## 1.4 用kubenetes去安装(推荐)
+
+The Node Exporter needs to run on each node in the Kubernetes cluster therefore we will use a DaemonSet to acheive this.
+Create a file called node-exporter.yaml and add the following:
+
+```
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    app: node-exporter
+  name: node-exporter
+  namespace: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        app: node-exporter
+    spec:
+      containers:
+      - args:
+        - --web.listen-address=0.0.0.0:9100
+        - --path.procfs=/host/proc
+        - --path.sysfs=/host/sys
+        image: quay.io/prometheus/node-exporter:v0.18.1
+        imagePullPolicy: IfNotPresent
+        name: node-exporter
+        ports:
+        - containerPort: 9100
+          hostPort: 9100
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 50Mi
+          requests:
+            cpu: 100m
+            memory: 30Mi
+        volumeMounts:
+        - mountPath: /host/proc
+          name: proc
+          readOnly: true
+        - mountPath: /host/sys
+          name: sys
+          readOnly: true
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Always
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists
+      volumes:
+      - hostPath:
+          path: /proc
+          type: ""
+        name: proc
+      - hostPath:
+          path: /sys
+          type: ""
+        name: sys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: node-exporter
+  name: node-exporter
+  namespace: prometheus
+spec:
+  ports:
+  - name: node-exporter
+    port: 9100
+    protocol: TCP
+    targetPort: 9100
+  selector:
+    app: node-exporter
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: node-exporter
+    serviceMonitorSelector: prometheus
+  name: node-exporter
+  namespace: prometheus
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 30s
+    path: /metrics
+    targetPort: 9100
+  jobLabel: node-exporter
+  namespaceSelector:
+    matchNames:
+    - prometheus
+  selector:
+    matchLabels:
+      app: node-exporter
+
+```
+
+The above YAML will create a DaemonSet that launches the Node Exporter on each node in the Kubernetes cluster. It includes a Kubernetes Service and ServiceMonitor to scrape metrics from all instances of Node Exporter.
+
+Go ahead and install Node Exporter into your Kubernetes cluster by executing `kubectl apply -f node-exporter.yaml`.
+
+You can then use `kubectl get pods --namespace prometheus` to see the **node-exporter** Pod(s) being created by Kubernetes. After a brief moment you can then check the configured Targets in Prometheus and you will see that **node-exporter** is now being successfully scraped.
+
 
 
 
@@ -226,7 +352,6 @@ Sep 20 22:43:09 node00 node_exporter[88262]: time="2019-09-20T22:43:09-04:00" le
 
 编辑 prometheus.yml 文件
 
-
 ```yaml
 scrape_configs:
   - job_name: "node"
@@ -235,6 +360,7 @@ scrape_configs:
     static_configs:
       - targets: ["host.docker.internal:9100"]
 ```
+
 
 
 ```
