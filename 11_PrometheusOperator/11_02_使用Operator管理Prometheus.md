@@ -95,6 +95,7 @@ metadata:
 
 
 需要去更新 Prometheus Resource configuration
+在prometheus.yaml中 添加
 You now need to update the Prometheus Resource configuration to instruct the Prometheus Operator to configure the Prometheus instance using all ServiceMonitors that have the serviceMonitorSelector Label set as prometheus.
 Update the previous YAML file you created called prometheus.yaml and add the serviceMonitorSelector key to the Prometheus resource:
 ```
