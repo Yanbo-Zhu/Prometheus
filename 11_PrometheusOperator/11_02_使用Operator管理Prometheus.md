@@ -9,7 +9,6 @@
 ==Within the ServiceMonitor we specify the Kubernetes Labels that the Operator can use to identify the Kubernetes Service which in turn then identifies the Pods, that we wish to monitor. Lets look at how we can use Prometheus to scrape metrics from its own inbuilt metrics endpoint.==
 
 
-
 # 1 例子2
 
 
