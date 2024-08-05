@@ -393,6 +393,53 @@ type: Opaque
 ```
 
 
+
+### 2.3.1 targetLabels
+https://stackoverflow.com/questions/63852779/how-to-set-a-label-in-service-monitor-so-it-appears-in-prometheus-metrics
+
+In Servicemonitor spec,we need to add targetlabels in order to propagate the service labels to Prometheus.
+
+Example service with "teamname" label:
+
+```yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: example-application
+  labels:
+    app: example-application
+    teamname: neon
+spec:
+  selector:
+    app: example-application
+  ports:
+  - name: backend
+    port: 8080
+```
+
+Example Servicemonitor propagating the "teamname" label from service:
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: example-application
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: example-application
+  endpoints:
+  - port: backend
+    path: /prometheus
+  namespaceSelector:
+    matchNames:
+    - testns
+  targetLabels:
+    - teamname
+    - app
+```
+
 ## 2.4 关联Promethues与ServiceMonitor
 
 Prometheus与ServiceMonitor之间的关联关系使用serviceMonitorSelector定义，在Prometheus中通过标签选择当前需要监控的ServiceMonitor对象。修改prometheus-inst.yaml中Prometheus的定义如下所示： 
