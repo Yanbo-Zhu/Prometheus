@@ -48,7 +48,7 @@ metric_relabel_configs:
 
 # 2 Prometheus的Relabeling机制
 
-> ==就是复写 某个label 的vlue. 从 target 上采集到的 信息, 某个数据上有label, 复写他的值 ==
+> ==就是复写 某个label 的value. 从 target 上采集到的 信息, 某个数据上有label, 复写他的值 ==
 
 > 它的作用是 Prometheus 抓取 metrics 之前，就将对象相关的 labels 重写。下面是它几个重要的 label
 
