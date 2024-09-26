@@ -159,5 +159,41 @@ scrape_configs:
 |联邦集群|x|x|v|
 
 
+# 6 Prometheus Operator中的关于HA的备注 
 
 
+https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/high-availability.md
+
+
+## 6.1 Prometheus
+
+To run Prometheus in a highly available manner, two (or more) instances need to be running with the same configuration except that they will have one external label with a different value to identify them. The Prometheus instances scrape the same targets and evaluate the same rules, hence they will have the same data in memory and on disk, with a slight twist that given their different external label, the scrapes and evaluations won't happen at exactly the same time. As a consequence, query requests executed against each Prometheus instance may return slightly different results. 
+For alert evaluation this situation does not change anything, as alerts are typically only fired when a certain query triggers for a period of time. (Deduplication of alerts is happening on AlertManager side. So having two or more prometheuses provides only high availability, and not scaling.)
+For dashboarding, sticky sessions (using `sessionAffinity` on the Kubernetes `Service`) should be used, to get consistent graphs when refreshing or you can use something like [Thanos Querier](https://thanos.io/tip/components/query.md/) to federate the data.  (As for using Grafana or any other visualization tool - you should configure sticky sessions, to query single instance at a time )
+
+
+-----光有对多个Prometheus Instance 还不够，还需要用 Prometheus' sharding feature
+Running multiple Prometheus instances avoids having a single point of failure but it doesn't help scaling out Prometheus in case a single Prometheus instance can't handle all the targets and rules. This is where Prometheus' sharding feature comes into play. Sharding aims at splitting the scrape targets into multiple groups, each assigned to one Prometheus shard and small enough that they can be handled by a single Prometheus instance. 
+If possible,** functional sharding** is recommended: in this case, the Prometheus shard X scrapes all pods of Service A, B and C while shard Y scrapes pods from Service D, E and F. 
+When functional sharding is not possible, the Prometheus Operator is also able to support **automatic sharding:** the targets will be assigned to Prometheus shards based on their addresses. 
+The main drawback of this solution is the additional complexity: to query all data, query federation (e.g. Thanos Query) and distributed rule evaluation engine (e.g. Thanos Ruler) should be deployed to fan in the relevant data for queries and rule evaluations. Single shards of Prometheus can be run highly available as described before.
+
+------Prometheus' sharding feature 进一步解释： 
+就是一个 Prometheus instance 只负责收集来自于某几个service的metrics。  每个 group of targets to scrape is assigned to one Prometheus shard. 一个  Prometheus shard 可以近似于理解成为 a single prometheus isntance 。  然后 再将的 Prometheus instance 各自的metrics 通过 feradetation 输出 到一个总的prometheus server. 
+这样做的做的目的是可以 按照规则 seperate the load into serveal different prometheus。 
+To handle large amounts of data, the load can be distributed across multiple Prometheus instances, a technique called sharding. One common method of sharding is by service, where each Prometheus instance is responsible for collecting metrics from a subset of all services.
+
+
+One of the goals with the Prometheus Operator is that we want to completely automate sharding and federation. We are currently implementing some of the groundwork to make this possible, and figuring out the best approach to do so, but it is definitely on the roadmap!
+
+## 6.2 Alertmanager
+
+To ensure high-availability of the Alertmanager service, Prometheus instances are configured to send their alerts to all configured Alertmanager instances (as described in the [Alertmanager documentation](https://prometheus.io/docs/alerting/latest/alertmanager/#high-availability)). The Alertmanager instances creates a gossip-based cluster to replicate alert silences and notification logs.
+
+The Prometheus Operator manages the following configuration
+- Alertmanager discovery using the Kubernetes API for Prometheus.
+- Highly-available cluster for Alertmanager when replicas > 1.
+
+## 6.3 Exporters
+
+For exporters, high availability depends on the particular exporter. In the case of [`kube-state-metrics`](https://github.com/kubernetes/kube-state-metrics), because it is effectively stateless, it is the same as running any other stateless service in a highly available manner. Simply run multiple replicas that are being load balanced. Key for this is that the backing service, in this case the Kubernetes API server is highly available, ensuring that the data source of `kube-state-metrics` is not a single point of failure.
