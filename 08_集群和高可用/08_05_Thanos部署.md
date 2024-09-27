@@ -142,7 +142,7 @@ prometheus-prometheus-1                         3/3     Running   0          1m1
 ## 1.2 做测试
 
 
-用port-forward 去连接 2个 prometheus instance 中其中的一个， 但你不知道连接的是其中的哪一个 
+用port-forward 的时候使用的是 Kubernetes internal load balancing functionality,, 去连接 2个 prometheus instance 中其中的一个， 但你不知道连接的是其中的哪一个 
 
 Now lets put the reliability of this to the test:
 
@@ -159,14 +159,11 @@ Your Prometheus deployment uses a Kubernetes Service and in the previous example
 [![Two Prometheus Instances with Kubernetes Service](https://observability.thomasriley.co.uk/prometheus/using-thanos/high-availability/images/multiple-prometheus-with-service.png?classes=shadow&width=30pc)](https://observability.thomasriley.co.uk/prometheus/using-thanos/high-availability/images/multiple-prometheus-with-service.png?classes=shadow&width=30pc)
 
 用port-forward 去连接 2个 prometheus instance 中其中的一个， 但你不知道连接的是其中的哪一个 ， 也无法指定某个instnce 
-
-So when you connect to Prometheus via the Kuberneres Service the request will be serviced by one of the running Prometheus instances. However, when you make subsequent requests there is no guarantee that the request will be serviced by the same instance. 
+==So when you connect to Prometheus via the Kuberneres Service the request will be serviced by one of the running Prometheus instances. However, when you make subsequent requests there is no guarantee that the request will be serviced by the same instance. ==
 
 
 上图这种模式下 ， 无法保障 两个 instance scrape 重要的 metrice in the same time, 他们会抢夺 metrice , 之间不同步 ， 所以 你用 grafana 去看数据的时候， 同一个 graph, 设置的查询的时间段相同， 也会看到不同数据。 
 上面这缺点时可用 Thanos 来消除的 
-
-
 Why is this an issue? The two instances of Prometheus that are running are independent of each other and while they do have the same scrape configuration there is no guarantee that they will scrape the targets at exactly the same time, therefore the time series metrics that they each collect may have different values.
 
 What this all means is, each time you connect to Prometheus via the load balanced Kubernetes Service, you may see some oddness with metrics changing. When visualizing the metrics over time with dashboarding tools such as Grafana, this leads to a really poor experience for users, as each time you reload the same graph it may appear differently in the same time period. This is now where Thanos can help!
