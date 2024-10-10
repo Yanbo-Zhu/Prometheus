@@ -6,7 +6,7 @@
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LVMF4RtPS-2rjW9R-hG%252F-LPS9QhUbi37E1ZK8mXF%252Fprometheus-alert-artich.png%3Fgeneration%3D1546578333144123%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=57fb9de5&sv=1)
 
 
-
+![](image/0_d82VFsCEpGtYaOfU.webp)
 
 
 
@@ -72,3 +72,102 @@ Alertmanager特性
 
 
 
+# 5 两种 alert System
+
+## 5.1 Peometheus -> Alertmanager 
+
+https://medium.com/@sanskaragrawalla/monitoring-alerting-with-prometheus-grafana-alertmanager-58e732183162
+
+### 5.1.1 Prometheus.yml
+
+This configuration file contains settings for the Prometheus server itself. It includes information about the targets to scrape (e.g., which services to monitor), the retention policies for time series data, and other server-specific settings.
+
+Define the Alertmanager address as the destination for alerts within the alertmanager configuration.
+
+
+```
+global:
+  scrape_interval:     15s
+  external_labels:
+    monitor: 'activemq'
+
+rule_files:
+  - ./rules-amq.yml
+
+scrape_configs:
+  - job_name: 'activemq'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:8080']
+
+alerting:
+  alertmanagers:
+    - scheme: http
+      static_configs:
+        - targets: ['localhost:9093']
+```
+### 5.1.2 AlertingRules.yml
+
+The AlertingRules configuration file defines the alerting rules that Prometheus should use to **generate alerts based on the collected metrics**. These rules specify conditions, thresholds, and actions to take when certain conditions are met, helping you monitor your services effectively.
+
+```
+groups:
+  - name: high_cpu_usage
+    rules:
+      - expr: avg(irate(node_cpu{mode="idle"}[5m])) < 0.05
+        alert: HighCPU
+        for: 10m
+        annotations:
+          summary: "High CPU Usage Detected on Node {{ $labels.node }}"
+          description: "Average CPU idle below 5% for 5 minutes on node {{ $labels.node }}"
+```
+This rule monitors the average CPU idle rate across all nodes using the irate function to calculate the rate of change over a 5-minute window. If the average idle rate falls below 5% for 10 minutes, an alert named "HighCPU" is triggered. The associated annotations provide context about the specific node experiencing high CPU usage.
+
+### 5.1.3 Alertmanager.yml: 
+Including this in your Alertmanager ConfigMap allows you to tailor the alerting process to your organization's needs, **ensuring that important alerts are properly routed and notifications are sent to the appropriate channels.**
+
+```
+global:
+  smtp_smarthost: 'localhost:25'
+  smtp_from: 'alertmanager@monitoring.com'
+
+route:
+  receiver: 'default-receiver'
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  group_by: [alertname]
+  routes:
+  - receiver: 'slack'
+    group_wait: 10s
+    match_re:
+      service: activemq
+
+receivers:
+  - name: 'default-receiver'
+    email_configs:
+    - to: 'justin.reock@roguewave.com'
+
+  - name: 'slack'
+    slack_configs:
+    - api_url: https://hooks.slack.com/services/...
+      channel: '#general'
+```
+## 5.2 Peometheus to Grafana Alert (without using Alertmanager)
+
+Garfana hat eigene  Alerting System , sodass wir Alertmanager  nicht mehr benutzen muss.
+
+Prometheus.yml 不需要设置 destination alerting 
+
+prometheus 中不需要设置 AlertingRules
+
+在 gafana中设置  Alertrule and  Contact point 
+
+https://grafana.com/docs/grafana/latest/alerting/
+https://grafana.com/docs/grafana/latest/alerting/fundamentals/
+
+![](image/Pasted%20image%2020241008201833.png)
+
+An alert rule consists of one or more queries and expressions that select the data you want to measure. A alert rule will generate Alert instance, when the condition defined in alert rule are met
+Each alert rule can produce multiple alert instances (also known as alerts) - one alert instance for each time series.
+Contact points determine the notification message and where notifications are sent. 
