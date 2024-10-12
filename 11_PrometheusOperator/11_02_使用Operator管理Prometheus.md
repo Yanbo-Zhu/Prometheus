@@ -81,7 +81,7 @@ prometheus                     1m
 
 ## 1.3 关联新创造的ServiceMonitor和Prometheus Server
 
-这样 Prometheus Server 才能知道，用户新创造了一个ServiceMonitor , 需要去监控 
+这样 Prometheus Server 才能知道，用户新创造了一个ServiceMonitor , 需要去监控
 
 Before Prometheus Operator will automatically update the running Prometheus instance configuration to set it to scrape metrics from itself, there is one more thing we must do. On the **ServiceMonitor** we defined a label on the resource called **serviceMonitorSelector**, as shown below:
 
