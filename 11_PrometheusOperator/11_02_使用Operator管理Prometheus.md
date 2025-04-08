@@ -1,4 +1,10 @@
 
+
+
+
+
+# 1 ServiceMonitor
+
 1. 利用Prometheus Operator 声明式 创建一个 Prometheus Server实例
 2. 利用Prometheus Operator 声明式 创建一个 ServiceMonitor的对象
 3. 关联Promethues与ServiceMonitor
@@ -9,10 +15,10 @@
 ==Within the ServiceMonitor we specify the Kubernetes Labels that the Operator can use to identify the Kubernetes Service which in turn then identifies the Pods, that we wish to monitor. Lets look at how we can use Prometheus to scrape metrics from its own inbuilt metrics endpoint.==
 
 
-# 1 例子2
+## 1.1 例子2
 
 
-## 1.1 确定哪个service我们要去monitor_以及这个service有那些label
+### 1.1.1 确定哪个service我们要去monitor_以及这个service有那些label
 
 Using kubectl describe, we can view the Labels on the prometheus-operated service that the Prometheus Operator previously created. If you wish to see this execute `kubectl describe service prometheus-operated --namespace prometheus `in your terminal or see the example below:
 
@@ -35,7 +41,7 @@ Events:            <none>
 
 
 
-## 1.2 创造一个 ServiceMonitor去追踪某个Service 
+### 1.1.2 创造一个 ServiceMonitor去追踪某个Service 
 
 这个service是贴有某个特定的label的, 
 ServiceMonitor中给出要去追踪具有那些label的Service
@@ -79,7 +85,7 @@ prometheus                     1m
 ```
 
 
-## 1.3 关联新创造的ServiceMonitor和Prometheus Server
+### 1.1.3 关联新创造的ServiceMonitor和Prometheus Server
 
 这样 Prometheus Server 才能知道，用户新创造了一个ServiceMonitor , 需要去监控
 
@@ -161,7 +167,7 @@ You have now successfully configured Prometheus using the ServiceMonitor. Going 
 
 
 
-## 1.4 查看结果 
+### 1.1.4 查看结果 
 
 看看 目标的 pod 是否监控上了 
 
@@ -172,9 +178,9 @@ In the Prometheus UI if you select Status > Targets (or go here) you will see de
 
 
 
-# 2 例子1
+## 1.2 例子1
 
-## 2.1 创建Prometheus实例
+### 1.2.1 创建Prometheus实例
 
 > 利用Prometheus Operator 声明式 创建一个 Prometheus Server实例
 
@@ -228,7 +234,7 @@ $ kubectl -n monitoring port-forward statefulsets/prometheus-inst 9090:9090
 ![](https://yunlzheng.gitbook.io/~gitbook/image?url=https%3A%2F%2F2416223964-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fassets%252F-LBdoxo9EmQ0bJP2BuUi%252F-LTqt7j2IAOToEk6hOsn%252F-LTqt9HdKEQc3urcy9NC%252Foperator-01.png%3Fgeneration%3D1544961698123185%26alt%3Dmedia&width=768&dpr=4&quality=100&sign=979fa1fb&sv=1)
 
 
-## 2.2 创建Service 和 Depolyment(Pod)
+### 1.2.2 创建Service 和 Depolyment(Pod)
 
 > This means the applications and services must expose a HTTP(S) endpoint containing Prometheus formatted metrics. Prometheus will then, as per its configuration, periodically scrape metrics from these HTTP(S) endpoints.
 
@@ -296,7 +302,7 @@ codelab_api_request_duration_seconds_bucket{method="GET",path="/api/bar",status=
 ```
 
 
-## 2.3 使用ServiceMonitor管理监控配置
+### 1.2.3 使用ServiceMonitor管理监控配置
 
 > 利用Prometheus Operator 声明式 创建一个 ServiceMonitor的对象
 
@@ -394,7 +400,7 @@ type: Opaque
 
 
 
-### 2.3.1 targetLabels
+#### 1.2.3.1 targetLabels
 https://stackoverflow.com/questions/63852779/how-to-set-a-label-in-service-monitor-so-it-appears-in-prometheus-metrics
 
 In Servicemonitor spec,we need to add targetlabels in order to propagate the service labels to Prometheus.
@@ -440,7 +446,7 @@ spec:
     - app
 ```
 
-## 2.4 关联Promethues与ServiceMonitor
+### 1.2.4 关联Promethues与ServiceMonitor
 
 Prometheus与ServiceMonitor之间的关联关系使用serviceMonitorSelector定义，在Prometheus中通过标签选择当前需要监控的ServiceMonitor对象。修改prometheus-inst.yaml中Prometheus的定义如下所示： 
 为了能够让Prometheus关联到ServiceMonitor，需要在Pormtheus定义中使用serviceMonitorSelector，我们可以通过标签选择当前Prometheus需要监控的ServiceMonitor对象。
@@ -558,7 +564,7 @@ level=error ts=2018-12-15T12:52:48.452108433Z caller=main.go:240 component=k8s_c
 ```
 
 
-## 2.5 创建 自定义ServiceAccount
+### 1.2.5 创建 自定义ServiceAccount
 
 由于默认创建的Prometheus实例使用的是monitoring命名空间下的default账号，该账号并没有权限能够获取default命名空间下的任何资源信息。
 
@@ -640,5 +646,16 @@ prometheus.monitoring.coreos.com/inst configured
 ```
 
 等待Prometheus Operator完成相关配置变更后，此时查看Prometheus，我们就能看到当前Prometheus已经能够正常的采集实例应用的相关监控数据了。
+
+
+
+# 2 ScrapeConfig CRD
+
+https://prometheus-operator.dev/docs/developer/scrapeconfig/
+
+https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/proposals/202212-scrape-config.md
+
+https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/ScrapeConfig/v1alpha1@v0.65.1
+
 
 
